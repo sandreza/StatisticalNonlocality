@@ -1,2 +1,2 @@
 # StatisticalNonlocality
-Here we provide supplementary material for 
+Plots and Computations for Statistical Nonlocality of Dynamically Coherent Structures
