@@ -21,7 +21,7 @@ end
     M = ou_transition_matrix(n)
     Mh = [
         -1 1/2 0
-        1 -1   1
+        1 -1 1
         0 1/2 -1
     ]
     @test all(abs.(Mh - M) .≤ eps(n / 2))

@@ -1,5 +1,5 @@
-
-T = [-1 1 0 0;           0 -1 1 0;                     0 0 -1 1;                               1 0 0 -1]
+using LinearAlgebra
+T = [-1 1 0 0; 0 -1 1 0; 0 0 -1 1; 1 0 0 -1]
 
 Λ, V = eigen(T)
 Λ, W = eigen(T')
@@ -33,9 +33,9 @@ maximum(abs.(T' * W - W * Diagonal(reverse(Λ)))) ≤ eps(10.0)
 
 U = [
     exp(im * 0) 0 0 0
-                       0 exp(im * π / 2) 0 0
-                                              0 0 exp(im * π) 0
-                                                                 0 0 0 exp(im * 3π / 2)
+    0 exp(im * π / 2) 0 0
+    0 0 exp(im * π) 0
+    0 0 0 exp(im * 3π / 2)
 ] # advection operator structure
 W * U * inv(W)
 

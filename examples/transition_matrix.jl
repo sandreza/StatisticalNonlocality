@@ -21,5 +21,5 @@ W[:, 1] .= W¹
 W[:, 2] .= -W²
 W[:, 3] .= W³
 
-U = [-1 0 0;         0 0 0;                0 0 1] # advection operator structure
+U = [-1 0 0; 0 0 0; 0 0 1] # advection operator structure
 W * U * inv(W)
