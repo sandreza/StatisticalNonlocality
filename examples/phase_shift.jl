@@ -48,3 +48,5 @@ S[:, 4] .= real.(W⁴)
 
 ##
 inv(S) * U * S
+# Block Matrix Example
+[S 0*I ; 0*I S]
