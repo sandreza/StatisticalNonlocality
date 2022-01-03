@@ -1,4 +1,3 @@
-
 import StatisticalNonlocality: ou_transition_matrix
 
 @testset "Transition Matrix Column Sum Zero" begin

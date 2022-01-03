@@ -1,4 +1,4 @@
-export ou_transition_matrix
+# export ou_transition_matrix
 
 function ou_transition_matrix(n)
     Mⱼₖ = zeros(n + 1, n + 1)
