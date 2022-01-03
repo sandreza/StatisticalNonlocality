@@ -40,3 +40,11 @@ U = [
 W * U * inv(W)
 
 ##
+# Perhaps the following similarity transformation is a little nicer
+S[:, 1] .= real.(W¹)
+S[:, 2] .= real.(0.5 * (W² + W³))
+S[:, 3] .= real.(0.5 * im * (W² - W³))
+S[:, 4] .= real.(W⁴)
+
+##
+inv(S) * U * S
