@@ -49,4 +49,33 @@ S[:, 4] .= real.(W⁴)
 ##
 inv(S) * U * S
 # Block Matrix Example
-[S 0*I ; 0*I S]
+[S 0*I; 0*I S]
+
+##
+import StatisticalNonlocality: cheb, fourier_nodes, fourier_wavenumbers
+N = 32
+M = 32
+D, z = cheb(M)
+k = fourier_wavenumbers(N, L = 2)
+x = fourier_nodes(M, a = -1, b = 1)
+
+x = reshape(x, (N, 1))
+z = reshape(z, (1, M + 1))
+
+ψ¹ = sin.(x) .* sin.(z)
+ψ² = cos.(x) .* sin.(z)
+ψ³ = -sin.(x) .* sin.(z)
+ψ⁴ = -cos.(x) .* sin.(z)
+
+∂z = kron(I + zeros(N,N), D)
+∂x = kron(D, I + zeros(M,M))
+
+#=
+# boundary indicies
+∂Ωˣ = 
+for i in ∂Ωˣ
+    ∂x[j,:] .= 0.0
+    ∂x[j,1] = 1.0
+end
+=#
+qr(∂x) \ I
