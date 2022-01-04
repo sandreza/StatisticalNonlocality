@@ -52,13 +52,19 @@ inv(S) * U * S
 [S 0*I; 0*I S]
 
 ##
+using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
 import StatisticalNonlocality: cheb, fourier_nodes, fourier_wavenumbers
+import StatisticalNonlocality: droprelativezeros!
 N = 32
 M = 32
-D, z = cheb(M)
-k = fourier_wavenumbers(N, L = 2)
-x = fourier_nodes(M, a = -1, b = 1)
+Dz, z = cheb(M)
+a, b = 0, 2π
+k = fourier_wavenumbers(N, L = b - a)
+x = fourier_nodes(N, a = a, b = b)
 
+ℱ = fft(I + zeros(N, N), 1)
+ℱ⁻¹ = ifft(I + zeros(N, N), 1)
+Dx = real.(ℱ⁻¹ * Diagonal(im .* k) * ℱ)
 x = reshape(x, (N, 1))
 z = reshape(z, (1, M + 1))
 
@@ -67,15 +73,63 @@ z = reshape(z, (1, M + 1))
 ψ³ = -sin.(x) .* sin.(z)
 ψ⁴ = -cos.(x) .* sin.(z)
 
-∂z = kron(I + zeros(N,N), D)
-∂x = kron(D, I + zeros(M,M))
+∂z = kron(Dz, I + zeros(N, N))
+∂x = kron(I + zeros(M + 1, M + 1), Dx)
 
-#=
-# boundary indicies
-∂Ωˣ = 
-for i in ∂Ωˣ
-    ∂x[j,:] .= 0.0
-    ∂x[j,1] = 1.0
+e1 = norm(∂x * ψ¹[:] - ψ²[:])
+println("The error in take in the partial with respect to x is ", e1)
+e2 = norm(∂z * (ψ¹[:]) - (sin.(x).*cos.(z))[:])
+println("The error in taking the partial with respect to y is ", e2)
+
+zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
+
+answ = Dz * z[:]
+bDz = copy(Dz)
+bDz[1, :] .= 0.0
+bDz[1, 1] = 1.0
+bDz \ answ - z[:]
+
+zlifted2 = sparse(kron(I + zeros(N, N), Diagonal(z[:])))
+
+
+# need to test anti-derivative
+
+# boundary indices
+b∂z = copy(∂z)
+∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
+∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
+for ∂i in ∂Ω¹
+    b∂z[∂i, :] .= 0.0
+    b∂z[∂i, ∂i] = 1.0
 end
-=#
-qr(∂x) \ I
+
+numerical_answ = b∂z \ ones(size(∂z)[2])
+exact_answ = (zeros(M, 1).+z)[:]
+e1 = maximum(abs.((numerical_answ-exact_answ)[:]))
+println("The maximum error is ", e1)
+
+## boundary indices
+b∂z = copy(∂z)
+∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
+∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
+for ∂i in ∂Ω²
+    b∂z[∂i, :] .= 0.0
+    b∂z[∂i, ∂i] = 1.0
+end
+
+numerical_answ = b∂z \ ones(size(∂z)[2])
+exact_answ = (zeros(M, 1).+z.+2)[:]
+e2 = maximum(abs.((numerical_answ-exact_answ)[:]))
+println("The maximum error is ", e2)
+
+advection_operator(ψ, ∂x, ∂z) = ∂z * Diagonal(ψ[:]) * ∂x - ∂x * Diagonal(ψ[:]) * ∂z
+
+A¹ = advection_operator(ψ¹, ∂x, ∂z)
+A² = advection_operator(ψ², ∂x, ∂z)
+A³ = advection_operator(ψ³, ∂x, ∂z)
+A⁴ = advection_operator(ψ⁴, ∂x, ∂z)
+
+tmp = sparse(A⁴)
+println(length(tmp.nzval))
+droprelativezeros!(tmp)
+println(length(tmp.nzval))
