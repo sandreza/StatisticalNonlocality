@@ -110,19 +110,11 @@ e1 = maximum(abs.((numerical_answ-exact_answ)[:]))
 println("The maximum error is ", e1)
 
 ## boundary indices
-b∂z = copy(∂z)
-∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
-∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
-for ∂i in ∂Ω²
-    b∂z[∂i, :] .= 0.0
-    b∂z[∂i, ∂i] = 1.0
-end
 
-numerical_answ = b∂z \ ones(size(∂z)[2])
-exact_answ = (zeros(M, 1).+z.+2)[:]
-e2 = maximum(abs.((numerical_answ-exact_answ)[:]))
-println("The maximum error is ", e2)
 
+
+
+##
 advection_operator(ψ, ∂x, ∂z) = ∂z * Diagonal(ψ[:]) * ∂x - ∂x * Diagonal(ψ[:]) * ∂z
 
 A¹ = advection_operator(ψ¹, ∂x, ∂z)
@@ -134,10 +126,3 @@ tmp = sparse(A⁴)
 println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
-
-##
-H = Dx * Dx - I
-rhs = sin.(x[:]) + sin.(k[3] * x[:])
-answ = H \ rhs
-exact_answ = sin.(x[:]) / (-1 - k[2]^2) + sin.(k[3] * x[:]) / (-1 - k[3]^2)
-norm(answ - exact_answ)
