@@ -55,8 +55,8 @@ inv(S) * U * S
 using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
 import StatisticalNonlocality: cheb, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
-N = 32
-M = 32
+N = 8
+M = 8
 Dz, z = cheb(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)
@@ -133,3 +133,10 @@ tmp = sparse(A⁴)
 println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
+
+##
+H = Dx * Dx - I
+rhs = sin.(x[:]) + sin.(k[2] * x[:])
+answ = H \ rhs
+exact_answ = -sin.(x[:]) / 2 + sin.(k[2] * x[:]) / (-1 - k[2]^2)
+norm(ans - exact_answ)
