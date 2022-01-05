@@ -41,6 +41,7 @@ W * U * inv(W)
 
 ##
 # Perhaps the following similarity transformation is a little nicer
+S = real.(V)
 S[:, 1] .= real.(W¹)
 S[:, 2] .= real.(0.5 * (W² + W³))
 S[:, 3] .= real.(0.5 * im * (W² - W³))
@@ -136,7 +137,7 @@ println(length(tmp.nzval))
 
 ##
 H = Dx * Dx - I
-rhs = sin.(x[:]) + sin.(k[2] * x[:])
+rhs = sin.(x[:]) + sin.(k[3] * x[:])
 answ = H \ rhs
-exact_answ = -sin.(x[:]) / 2 + sin.(k[2] * x[:]) / (-1 - k[2]^2)
-norm(ans - exact_answ)
+exact_answ = sin.(x[:]) / (-1 - k[2]^2) + sin.(k[3] * x[:]) / (-1 - k[3]^2)
+norm(answ - exact_answ)
