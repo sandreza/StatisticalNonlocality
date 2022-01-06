@@ -56,8 +56,8 @@ inv(S) * U * S
 using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
 import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
-N = 8
-M = 8
+N = 8 * 4
+M = 8 * 4
 Dz, z = chebyshev(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)
@@ -111,15 +111,66 @@ println("The maximum error is ", e1)
 ## boundary indices
 
 ##
+# u⃗⋅∇
 advection_operator(ψ, ∂x, ∂z) =
-    ∂z * Diagonal(ψ[:]) * ∂x - ∂x * Diagonal(ψ[:]) * ∂z
+    Diagonal(∂z * ψ[:]) * ∂x + Diagonal(-∂x * ψ[:]) * ∂z
 
 A¹ = advection_operator(ψ¹, ∂x, ∂z)
 A² = advection_operator(ψ², ∂x, ∂z)
 A³ = advection_operator(ψ³, ∂x, ∂z)
 A⁴ = advection_operator(ψ⁴, ∂x, ∂z)
 
+Δ = ∂x^2 + ∂z^2
+
 tmp = sparse(A⁴)
 println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
+
+γ = 1.0
+L = [(γ * I-Δ) -γ*I A¹; γ*I (γ * I-Δ) -A²; A¹ -A² (2 * γ * I-Δ)]
+
+sL = sparse(L) # not worth
+droprelativezeros!(sL)
+sQR = qr(sL)
+luL = lu(L)
+# Grab Boundary Indices
+zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
+zlifted = [zlifted 0*I 0*I; 0*I zlifted 0*I; 0*I 0*I zlifted]
+∂Ω¹ = zlifted.rowval[zlifted.nzval .== z[1]]
+∂Ω² = zlifted.rowval[zlifted.nzval .== z[end]]
+∂Ω = vcat(∂Ω¹, ∂Ω²)
+for ∂i in ∂Ω
+    L[∂i, :] .= 0.0
+    L[∂i, ∂i] = 1.0
+end
+
+Q, R = qr(L)
+
+G = qr(L) \ I
+u¹ = Diagonal(∂z * ψ¹[:])
+u² = Diagonal(∂z * ψ²[:])
+v¹ = Diagonal(-∂x * ψ¹[:])
+v² = Diagonal(-∂x * ψ²[:])
+# NEED TO ACCOUNT FOR BCS in U, V
+U = -[u¹; u²; 0 * I]
+Uᵀ = [u¹ u² 0 * I]
+V = -[v¹; v²; 0 * I]
+Vᵀ = [v¹ v² 0 * I]
+for ∂i in ∂Ω
+    U[∂i, :] .= 0.0
+    V[∂i, :] .= 0.0
+end
+
+EF¹¹ = Uᵀ * G * U
+EF¹² = Uᵀ * G * V
+EF²¹ = Vᵀ * G * U
+EF²² = Vᵀ * G * V
+
+E = [EF¹¹ EF¹²; EF²¹ EF²²]
+# Check that all the eigenvalues are negative
+λE = eigvals(E)
+bools = real.(λE) .≤ eps(1e3 * maximum(abs.(λE)))
+sum(bools) == length(λE)
+
+maximum(abs.(EF²¹ + EF¹²))
