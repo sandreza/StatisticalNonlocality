@@ -1,4 +1,4 @@
-using LinearAlgebra
+using LinearAlgebra, StatisticalNonlocality
 import StatisticalNonlocality: ou_transition_matrix
 
 n = 1

@@ -54,11 +54,11 @@ inv(S) * U * S
 
 ##
 using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
-import StatisticalNonlocality: cheb, fourier_nodes, fourier_wavenumbers
+import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
 N = 8
 M = 8
-Dz, z = cheb(M)
+Dz, z = chebyshev(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)
 x = fourier_nodes(N, a = a, b = b)
@@ -79,7 +79,7 @@ z = reshape(z, (1, M + 1))
 
 e1 = norm(∂x * ψ¹[:] - ψ²[:])
 println("The error in take in the partial with respect to x is ", e1)
-e2 = norm(∂z * (ψ¹[:]) - (sin.(x).*cos.(z))[:])
+e2 = norm(∂z * (ψ¹[:]) - (sin.(x) .* cos.(z))[:])
 println("The error in taking the partial with respect to y is ", e2)
 
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
@@ -92,30 +92,27 @@ bDz \ answ - z[:]
 
 zlifted2 = sparse(kron(I + zeros(N, N), Diagonal(z[:])))
 
-
 # need to test anti-derivative
 
 # boundary indices
 b∂z = copy(∂z)
-∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
-∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
+∂Ω¹ = zlifted.rowval[zlifted.nzval .== z[1]]
+∂Ω² = zlifted.rowval[zlifted.nzval .== z[end]]
 for ∂i in ∂Ω¹
     b∂z[∂i, :] .= 0.0
     b∂z[∂i, ∂i] = 1.0
 end
 
 numerical_answ = b∂z \ ones(size(∂z)[2])
-exact_answ = (zeros(M, 1).+z)[:]
-e1 = maximum(abs.((numerical_answ-exact_answ)[:]))
+exact_answ = (zeros(M, 1) .+ z)[:]
+e1 = maximum(abs.((numerical_answ - exact_answ)[:]))
 println("The maximum error is ", e1)
 
 ## boundary indices
 
-
-
-
 ##
-advection_operator(ψ, ∂x, ∂z) = ∂z * Diagonal(ψ[:]) * ∂x - ∂x * Diagonal(ψ[:]) * ∂z
+advection_operator(ψ, ∂x, ∂z) =
+    ∂z * Diagonal(ψ[:]) * ∂x - ∂x * Diagonal(ψ[:]) * ∂z
 
 A¹ = advection_operator(ψ¹, ∂x, ∂z)
 A² = advection_operator(ψ², ∂x, ∂z)
