@@ -1,5 +1,6 @@
 using LinearAlgebra
 import StatisticalNonlocality: ou_transition_matrix
+import StatisticalNonlocality: fourier
 
 n = 2
 M = ou_transition_matrix(n)
@@ -23,3 +24,16 @@ W[:, 3] .= W³
 
 U = [-1 0 0; 0 0 0; 0 0 1] # advection operator structure
 W * U * inv(W)
+
+N = 32
+
+D, x = fourier(N, a = 0, b = 2π)
+
+γ = 1.0 # 1/ γ is the eddy timescale
+U = 1.0
+κ = 1.0
+
+fluxkernel =
+    -U * inv(κ .* D^2 - γ * I - U * D * inv(κ .* D^2 - 2 * γ * I) * U * D) * U
+λ = eigvals(fluxkernel)
+σ = svdvals(fluxkernel)

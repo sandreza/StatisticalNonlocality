@@ -39,7 +39,7 @@ end
 
 """
 # Description
-
+Spectral differentiation matrix and nodes for periodic domains
 # Argument
 - 'N': number of gridpoints
 # Keyword Argument
