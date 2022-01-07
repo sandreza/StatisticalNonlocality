@@ -127,7 +127,7 @@ println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
-γ = 10.0
+γ = 1e2
 κ = 1e-2
 L = [(γ*I-κ*Δ) -γ*I 0.5*A¹; γ*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
