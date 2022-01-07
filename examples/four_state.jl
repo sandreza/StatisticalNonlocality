@@ -56,8 +56,8 @@ inv(S) * U * S
 using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
 import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
-N = 8 * 4
-M = 8 * 4
+N = 8 * 2
+M = 8 * 2
 Dz, z = chebyshev(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)
@@ -79,7 +79,7 @@ z = reshape(z, (1, M + 1))
 
 e1 = norm(∂x * ψ¹[:] - ψ²[:])
 println("The error in take in the partial with respect to x is ", e1)
-e2 = norm(∂z * (ψ¹[:]) - (sin.(x) .* cos.(z))[:])
+e2 = norm(∂z * (ψ¹[:]) - (sin.(x).*cos.(z))[:])
 println("The error in taking the partial with respect to y is ", e2)
 
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
@@ -96,16 +96,16 @@ zlifted2 = sparse(kron(I + zeros(N, N), Diagonal(z[:])))
 
 # boundary indices
 b∂z = copy(∂z)
-∂Ω¹ = zlifted.rowval[zlifted.nzval .== z[1]]
-∂Ω² = zlifted.rowval[zlifted.nzval .== z[end]]
+∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
+∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
 for ∂i in ∂Ω¹
     b∂z[∂i, :] .= 0.0
     b∂z[∂i, ∂i] = 1.0
 end
 
 numerical_answ = b∂z \ ones(size(∂z)[2])
-exact_answ = (zeros(M, 1) .+ z)[:]
-e1 = maximum(abs.((numerical_answ - exact_answ)[:]))
+exact_answ = (zeros(N, 1).+z)[:]
+e1 = maximum(abs.((numerical_answ-exact_answ)[:]))
 println("The maximum error is ", e1)
 
 ## boundary indices
@@ -128,17 +128,13 @@ droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
 γ = 1.0
-L = [(γ * I-Δ) -γ*I A¹; γ*I (γ * I-Δ) -A²; A¹ -A² (2 * γ * I-Δ)]
+L = [(γ*I-Δ) -γ*I 0.5*A¹; γ*I (γ*I-Δ) -0.5*A²; A¹ -A² (2*γ*I-Δ)]
 
-sL = sparse(L) # not worth
-droprelativezeros!(sL)
-sQR = qr(sL)
-luL = lu(L)
 # Grab Boundary Indices
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
 zlifted = [zlifted 0*I 0*I; 0*I zlifted 0*I; 0*I 0*I zlifted]
-∂Ω¹ = zlifted.rowval[zlifted.nzval .== z[1]]
-∂Ω² = zlifted.rowval[zlifted.nzval .== z[end]]
+∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
+∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
 ∂Ω = vcat(∂Ω¹, ∂Ω²)
 for ∂i in ∂Ω
     L[∂i, :] .= 0.0
@@ -153,9 +149,9 @@ u² = Diagonal(∂z * ψ²[:])
 v¹ = Diagonal(-∂x * ψ¹[:])
 v² = Diagonal(-∂x * ψ²[:])
 # NEED TO ACCOUNT FOR BCS in U, V
-U = -[u¹; u²; 0 * I]
+U = -0.5 * [u¹; u²; 0 * I]
 Uᵀ = [u¹ u² 0 * I]
-V = -[v¹; v²; 0 * I]
+V = -0.5 * [v¹; v²; 0 * I]
 Vᵀ = [v¹ v² 0 * I]
 for ∂i in ∂Ω
     U[∂i, :] .= 0.0
@@ -174,3 +170,44 @@ bools = real.(λE) .≤ eps(1e3 * maximum(abs.(λE)))
 sum(bools) == length(λE)
 
 maximum(abs.(EF²¹ + EF¹²))
+EF¹¹ *= -1.0 
+EF¹² *= -1.0
+EF²¹ *= -1.0 
+EF²² *= -1.0
+##
+
+using GLMakie
+fig = Figure(resolution = (1800, 1300))
+titlestring = "Kˣˣ"
+ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
+titlestring = "Kˣᶻ"
+ax2 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
+titlestring = "Kᶻˣ"
+ax3 = Axis(fig[1, 3], title = titlestring, titlesize = 30)
+titlestring = "Kᶻᶻ"
+ax4 = Axis(fig[2, 3], title = titlestring, titlesize = 30)
+
+colormap = :thermal
+colormap2 = :balance
+hm1 = heatmap!(ax1, EF¹¹, colormap = colormap)
+ax1.yreversed = true
+
+hm2 = heatmap!(ax2, EF¹², colormap = colormap2)
+ax2.yreversed = true
+
+hm3 = heatmap!(ax3, EF²¹, colormap = colormap2)
+ax3.yreversed = true
+
+hm4 = heatmap!(ax4, EF²², colormap = colormap)
+ax4.yreversed = true
+
+Colorbar(fig[1, 2], hm1, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
+    labelsize = 30, ticksize = 25, tickalign = 1,)
+Colorbar(fig[2, 2], hm2, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
+    labelsize = 30, ticksize = 25, tickalign = 1,)
+Colorbar(fig[1, 4], hm3, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
+    labelsize = 30, ticksize = 25, tickalign = 1,)
+Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
+    labelsize = 30, ticksize = 25, tickalign = 1,)
+display(fig)
+##
