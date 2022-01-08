@@ -276,13 +276,13 @@ titlestring = "ψ⁴"
 ax4 = Axis(fig[2, 3], title = titlestring, titlesize = 30)
 
 colormap = :balance
-hm1 = heatmap!(ax1, ψ¹, colormap = colormap)
+hm1 = heatmap!(ax1, ψ¹, colormap = colormap, interpolate = true)
 
-hm2 = heatmap!(ax2, ψ², colormap = colormap)
+hm2 = heatmap!(ax2, ψ², colormap = colormap, interpolate = true)
 
-hm3 = heatmap!(ax3, ψ³, colormap = colormap)
+hm3 = heatmap!(ax3, ψ³, colormap = colormap, interpolate = true)
 
-hm4 = heatmap!(ax4, ψ⁴, colormap = colormap)
+hm4 = heatmap!(ax4, ψ⁴, colormap = colormap, interpolate = true)
 
 Colorbar(fig[1, 2], hm1, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
     labelsize = 30, ticksize = 25, tickalign = 1,)
