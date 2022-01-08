@@ -293,3 +293,28 @@ Colorbar(fig[1, 4], hm3, height = Relative(3 / 4), width = 25, ticklabelsize = 3
 Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
     labelsize = 30, ticksize = 25, tickalign = 1,)
 display(fig)
+
+##
+a1 = avglocaldiffusivity(EF¹¹, N, M)
+a2 = avglocaldiffusivity(EF¹², N, M)
+a3 = avglocaldiffusivity(EF²¹, N, M)
+a4 = avglocaldiffusivity(EF²², N, M)
+
+k = 1
+ℓ = π / 2
+maximum(a1) / maximum(a4) - ℓ^2 / k^2
+
+λdω = maximum(a1) / maximum(a2) * k / ℓ # = λ / ω
+maximum(a1) # = 0.5 U₀² * λ / (λ² + ω²) = 0.5 U₀² * 1 / (λ²/ω² + 1) * 1/ω²
+maximum(a2) # = 0.5 U₀² * ω / (λ² + ω²) * k / ℓ
+maximum(a3) # should be about the same as maximum(a2)
+maximum(a4) # = 0.5 U₀² * λ / (λ² + ω²) * (k / ℓ)^2
+
+U₀ = sqrt(norm(u¹[:])^2 + norm(v¹[:])^2) / (length(u¹))^0.5
+ω = 1 / (λdω^2 + 1) * k / ℓ / maximum(a2) * 0.5 * U₀^2
+λ = ω * λdω
+a1max = λ / (λ^2 + ω^2) * 0.5 * U₀^2
+a2max = ω / (λ^2 + ω^2) * k / ℓ * 0.5 * U₀^2
+a4max = λ / (λ^2 + ω^2) * (k / ℓ)^2 * 0.5 * U₀^2
+
+# the local diffusivity is proportional to 1/γ
