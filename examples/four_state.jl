@@ -31,33 +31,20 @@ T' * W - W * Diagonal(reverse(Λ))    # since we flipped the order so that index
 W' * T - Diagonal(reverse(Λ))' * W'  # same thing, recall that ' means adjoint, thus takes the conjucate
 maximum(abs.(T' * W - W * Diagonal(reverse(Λ)))) ≤ eps(10.0)
 
-U = [
-    exp(im * 0) 0 0 0
-    0 exp(im * π / 2) 0 0
-    0 0 exp(im * π) 0
-    0 0 0 exp(im * 3π / 2)
-] # advection operator structure
-W * U * inv(W)
-
-##
-# Perhaps the following similarity transformation is a little nicer
+# The following transformation is what is used
 S = real.(V)
 S[:, 1] .= real.(W¹)
 S[:, 2] .= real.(0.5 * (W² + W³))
 S[:, 3] .= real.(0.5 * im * (W² - W³))
 S[:, 4] .= real.(W⁴)
 
-##
-inv(S) * U * S
-# Block Matrix Example
-[S 0*I; 0*I S]
 
 ##
 using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
 import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
 N = 8 * 2
-M = 8 * 2
+M = 8 * 4
 Dz, z = chebyshev(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)
@@ -83,32 +70,7 @@ e2 = norm(∂z * (ψ¹[:]) - (sin.(x).*cos.(z))[:])
 println("The error in taking the partial with respect to y is ", e2)
 
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
-
-answ = Dz * z[:]
-bDz = copy(Dz)
-bDz[1, :] .= 0.0
-bDz[1, 1] = 1.0
-bDz \ answ - z[:]
-
 zlifted2 = sparse(kron(I + zeros(N, N), Diagonal(z[:])))
-
-# need to test anti-derivative
-
-# boundary indices
-b∂z = copy(∂z)
-∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
-∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
-for ∂i in ∂Ω¹
-    b∂z[∂i, :] .= 0.0
-    b∂z[∂i, ∂i] = 1.0
-end
-
-numerical_answ = b∂z \ ones(size(∂z)[2])
-exact_answ = (zeros(N, 1).+z)[:]
-e1 = maximum(abs.((numerical_answ-exact_answ)[:]))
-println("The maximum error is ", e1)
-
-## boundary indices
 
 ##
 # u⃗⋅∇
@@ -131,16 +93,36 @@ println(length(tmp.nzval))
 κ = 1e-2
 L = [(γ*I-κ*Δ) -γ*I 0.5*A¹; γ*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
+# Choose BC 
+dirichlet = false
 # Grab Boundary Indices
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
 zlifted = [zlifted 0*I 0*I; 0*I zlifted 0*I; 0*I 0*I zlifted]
 ∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
-∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
-∂Ω = vcat(∂Ω¹, ∂Ω²)
-for ∂i in ∂Ω
-    L[∂i, :] .= 0.0
-    L[∂i, ∂i] = 1.0
+for (i, ∂i) in enumerate(∂Ω¹)
+    if dirichlet
+        L[∂i, :] .= 0.0
+        L[∂i, ∂i] = 1.0
+    else
+        L[∂i, :] .= 0.0
+        blockindex = div((i - 1), N)
+        inds = (blockindex*N*(M+1)+1):((blockindex+1)*N*(M+1))
+        L[∂i, inds] .= ∂z[∂Ω¹[(i-1)%N+1], :]
+    end
 end
+∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
+for (i, ∂i) in enumerate(∂Ω²)
+    if dirichlet
+        L[∂i, :] .= 0.0
+        L[∂i, ∂i] = 1.0
+    else
+        L[∂i, :] .= 0.0
+        blockindex = div((i - 1), N)
+        inds = (blockindex*N*(M+1)+1):((blockindex+1)*N*(M+1))
+        L[∂i, inds] .= ∂z[∂Ω²[(i-1)%N+1], :]
+    end
+end
+∂Ω = vcat(∂Ω¹, ∂Ω²)
 
 Q, R = qr(L)
 
