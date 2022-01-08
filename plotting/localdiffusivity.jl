@@ -8,6 +8,7 @@ jlfile = jldopen("../data/nonlocal.jld2", "a+")
 κ²¹ = jlfile["localdiffusivity"]["κ21"]
 κ²² = jlfile["localdiffusivity"]["κ22"]
 z = jlfile["grid"]["z"][:]
+x = jlfile["grid"]["x"][:]
 ##
 using GLMakie
 
@@ -24,9 +25,11 @@ ax4 = Axis(fig[2, 2], title = titlestring, titlesize = 30)
 colormap = :thermal
 colormap2 = :balance
 A = maximum(κ¹¹)
-kdℓ = sqrt(maximum(κ²²) / A)
-f = maximum(κ¹²) / (A * kdℓ)
+k = 2π / (x[end] - x[1] + x[2]-x[1])
 ℓ = π / (z[1] - z[end])
+kdℓ = k/ℓ
+f = maximum(κ¹²) / (A * kdℓ)
+
 lines!(ax1, A * (sin.(ℓ * z) .^ 2), z, color = :red)
 scatter!(ax1, κ¹¹, z, color = :blue)
 

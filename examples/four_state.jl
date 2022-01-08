@@ -322,7 +322,7 @@ function grabdiagonal(A)
     return diagA
 end
 ##
-using JLD2
+using JLD2  
 filename = "nonlocal.jld2"
 file = jldopen("data/" * filename, "a+")
 # diffusivity
