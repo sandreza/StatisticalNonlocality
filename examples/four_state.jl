@@ -89,8 +89,8 @@ println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
-γ = 1e2
-κ = 1e-2
+γ = 1e0 # 1e2
+κ = 1e0 # 1e-2
 L = [(γ*I-κ*Δ) -γ*I 0.5*A¹; γ*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
 # Choose BC 
@@ -159,6 +159,13 @@ EF²¹ *= -1.0
 EF²² *= -1.0
 
 makelocal(E) = Array(Diagonal(sum(E, dims = 2)[:]))
+function avglocaldiffusivity(E, N, M)
+    local localdiff = makelocal(E)
+    localdiff = [localdiff[i, i] for i = 1:size(E)[1]]
+    local localdiff = reshape(localdiff, (N, M + 1))
+    local localdiff = sum(localdiff, dims = 1)[:]
+    return localdiff
+end
 ##
 
 using GLMakie
@@ -232,18 +239,6 @@ Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 3
 display(fig)
 
 ##
-
-function avglocaldiffusivity(E, N, M)
-    local localdiff = makelocal(E)
-    localdiff = [localdiff[i, i] for i = 1:size(E)[1]]
-    local localdiff = reshape(localdiff, (N, M + 1))
-    local localdiff = sum(localdiff, dims = 1)[:]
-    return localdiff
-end
-
-localdiff = avglocaldiffusivity(EF¹¹, N, M)
-lines(localdiff, z[:])
-##
 fig = Figure(resolution = (1800, 1300), title = "Local Operators")
 titlestring = "Kˣˣ"
 ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
@@ -310,7 +305,7 @@ maximum(a2) # = 0.5 U₀² * ω / (λ² + ω²) * k / ℓ
 maximum(a3) # should be about the same as maximum(a2)
 maximum(a4) # = 0.5 U₀² * λ / (λ² + ω²) * (k / ℓ)^2
 
-U₀ = sqrt(norm(u¹[:])^2 + norm(v¹[:])^2) / (length(u¹))^0.5
+U₀ = sqrt(norm(u¹[:])^2 + norm(v¹[:])^2) / (length(u¹))^0.5 # more legit considers quadrature stuff
 ω = 1 / (λdω^2 + 1) * k / ℓ / maximum(a2) * 0.5 * U₀^2
 λ = ω * λdω
 a1max = λ / (λ^2 + ω^2) * 0.5 * U₀^2
@@ -318,3 +313,59 @@ a2max = ω / (λ^2 + ω^2) * k / ℓ * 0.5 * U₀^2
 a4max = λ / (λ^2 + ω^2) * (k / ℓ)^2 * 0.5 * U₀^2
 
 # the local diffusivity is proportional to 1/γ
+function grabdiagonal(A)
+    MM = minimum(size(A))
+    diagA = zeros(MM)
+    for i in 1:MM
+        diagA[i] = A[i, i]
+    end
+    return diagA
+end
+##
+using JLD2
+filename = "nonlocal.jld2"
+file = jldopen("data/" * filename, "a+")
+# diffusivity
+groupname = "diffusivity"
+JLD2.Group(file, groupname)
+file[groupname]["K11"] = EF¹¹
+file[groupname]["K12"] = EF¹²
+file[groupname]["K21"] = EF²¹
+file[groupname]["K22"] = EF²²
+# parameters
+groupname = "parameters"
+JLD2.Group(file, groupname)
+file[groupname]["γ"] = γ
+file[groupname]["κ"] = κ
+# grid 
+groupname = "grid"
+JLD2.Group(file, groupname)
+file[groupname]["x"] = x
+file[groupname]["z"] = z
+# transition matrix 
+groupname = "transition"
+JLD2.Group(file, groupname)
+file[groupname]["T"] = T
+# streamfunction
+groupname = "streamfunction"
+JLD2.Group(file, groupname)
+file[groupname]["ψ¹"] = ψ¹
+file[groupname]["ψ²"] = ψ²
+file[groupname]["ψ³"] = ψ³
+file[groupname]["ψ⁴"] = ψ⁴
+# velocities
+groupname = "velocities"
+JLD2.Group(file, groupname)
+file[groupname]["u¹"] = reshape(grabdiagonal(u¹), size(ψ¹))
+file[groupname]["u²"] = reshape(grabdiagonal(u²), size(ψ¹))
+file[groupname]["v¹"] = reshape(grabdiagonal(v¹), size(ψ¹))
+file[groupname]["v²"] = reshape(grabdiagonal(v²), size(ψ¹))
+# local diffusivities
+groupname = "localdiffusivity"
+JLD2.Group(file, groupname)
+file[groupname]["κ11"] = avglocaldiffusivity(EF¹¹, N, M)
+file[groupname]["κ12"] = avglocaldiffusivity(EF¹², N, M)
+file[groupname]["κ21"] = avglocaldiffusivity(EF²¹, N, M)
+file[groupname]["κ22"] = avglocaldiffusivity(EF²², N, M)
+
+close(file)
