@@ -1,21 +1,23 @@
-using LinearAlgebra
+using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
+import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
+import StatisticalNonlocality: droprelativezeros!
 
 # overall velocity scale
 U₀ = 1.0
 # transition rate
-γ = 1e2  # 1e0 # 1e2
+γ = 1e0  # 1e0 # 1e2
 # diffusivity
-κ = 1e-2 # 1e0 # 1e-2
+κ = 1e-0 # 1e0 # 1e-2
+# phase 
+ω = γ 
 # boundary condition
 dirichlet = false
 # output file name
-filename = "nearly_local.jld2"
+filename = "nonlocal.jld2"
 
-using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
-import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
-import StatisticalNonlocality: droprelativezeros!
-N = 8 * 1
+N = 8 * 2
 M = 8 * 4
+
 Dz, z = chebyshev(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)
@@ -27,10 +29,10 @@ Dx = real.(ℱ⁻¹ * Diagonal(im .* k) * ℱ)
 x = reshape(x, (N, 1))
 z = reshape(z, (1, M + 1))
 
-ψ¹ = sin.(x) .* cos.(π / 2 * z)
-ψ² = cos.(x) .* cos.(π / 2 * z)
-ψ³ = -sin.(x) .* cos.(π / 2 * z)
-ψ⁴ = -cos.(x) .* cos.(π / 2 * z)
+ψ¹ = U₀ * sin.(x) .* cos.(π / 2 * z)
+ψ² = U₀ * cos.(x) .* cos.(π / 2 * z)
+ψ³ = -U₀ * sin.(x) .* cos.(π / 2 * z)
+ψ⁴ = -U₀ * cos.(x) .* cos.(π / 2 * z)
 
 ∂z = kron(Dz, I + zeros(N, N))
 ∂x = kron(I + zeros(M + 1, M + 1), Dx)
@@ -61,7 +63,7 @@ droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
 
-L = [(γ*I-κ*Δ) -γ*I 0.5*A¹; γ*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
+L = [(γ*I-κ*Δ) -ω*I 0.5*A¹; ω*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
 # Grab Boundary Indices
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
@@ -135,29 +137,6 @@ function avglocaldiffusivity(E, N, M)
     return localdiff
 end
 
-##
-a1 = avglocaldiffusivity(EF¹¹, N, M)
-a2 = avglocaldiffusivity(EF¹², N, M)
-a3 = avglocaldiffusivity(EF²¹, N, M)
-a4 = avglocaldiffusivity(EF²², N, M)
-
-k = 1
-ℓ = π / 2
-maximum(a1) / maximum(a4) - ℓ^2 / k^2
-
-λdω = maximum(a1) / maximum(a2) * k / ℓ # = λ / ω
-maximum(a1) # = 0.5 U₀² * λ / (λ² + ω²) = 0.5 U₀² * 1 / (λ²/ω² + 1) * 1/ω²
-maximum(a2) # = 0.5 U₀² * ω / (λ² + ω²) * k / ℓ
-maximum(a3) # should be about the same as maximum(a2)
-maximum(a4) # = 0.5 U₀² * λ / (λ² + ω²) * (k / ℓ)^2
-
-U₀ = sqrt(norm(u¹[:])^2 + norm(v¹[:])^2) / (length(u¹))^0.5 # more legit considers quadrature stuff
-ω = 1 / (λdω^2 + 1) * k / ℓ / maximum(a2) * 0.5 * U₀^2
-λ = ω * λdω
-a1max = λ / (λ^2 + ω^2) * 0.5 * U₀^2
-a2max = ω / (λ^2 + ω^2) * k / ℓ * 0.5 * U₀^2
-a4max = λ / (λ^2 + ω^2) * (k / ℓ)^2 * 0.5 * U₀^2
-
 # the local diffusivity is proportional to 1/γ
 function grabdiagonal(A)
     MM = minimum(size(A))
@@ -182,6 +161,7 @@ file[groupname]["K22"] = EF²²
 groupname = "parameters"
 JLD2.Group(file, groupname)
 file[groupname]["γ"] = γ
+file[groupname]["ω"] = ω
 file[groupname]["κ"] = κ
 # grid 
 groupname = "grid"
@@ -191,7 +171,12 @@ file[groupname]["z"] = z
 # transition matrix 
 groupname = "transition"
 JLD2.Group(file, groupname)
-file[groupname]["T"] = T
+
+T = [-1 1 0 0; 0 -1 1 0; 0 0 -1 1; 1 0 0 -1]
+sT = (T + T') / 2
+aT = (T - T') / 2
+
+file[groupname]["T"] = γ * sT + ω * aT
 # streamfunction
 groupname = "streamfunction"
 JLD2.Group(file, groupname)

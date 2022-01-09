@@ -42,11 +42,11 @@ display(S)
 display(inv(S))
 display(inv(S) * T * S)
 
-# could also do the following to correspond to Rossby Wave solution
+# The following partitions the magnitude of
+# the anti-symmetric component and the symmetric component
+# of the local diffusivity tensor
 sT = (T + T') / 2
 aT = (T - T') / 2
 λ = 1.0
 ω = 1.0
 inv(S) * (λ * sT + ω * aT) * S
-
-

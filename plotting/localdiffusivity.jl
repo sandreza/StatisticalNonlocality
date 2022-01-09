@@ -2,7 +2,9 @@
 using JLD2
 filepath = pwd()
 # jlfile = jldopen("../data/nearly_local.jld2", "a+")
+jlfile = jldopen("../data/nearly_local_symmetric.jld2", "a+")
 jlfile = jldopen("../data/nonlocal.jld2", "a+")
+# jlfile = jldopen("../data/nonlocal_symmetric.jld2", "a+")
 # jlfile = jldopen("data/nonlocal.jld2", "a+")
 # filepath = pwd()
 # jlfile = jldopen("data/nearly_local.jld2", "a+")
@@ -15,6 +17,7 @@ x = jlfile["grid"]["x"][:]
 ##
 # Contruct local diffusivity estimate from flow field and γ
 γ = jlfile["parameters"]["γ"]
+ω = jlfile["parameters"]["ω"]
 u¹ = jlfile["velocities"]["u¹"]
 u² = jlfile["velocities"]["u²"]
 v¹ = jlfile["velocities"]["v¹"]
@@ -23,10 +26,11 @@ v² = jlfile["velocities"]["v²"]
 # integrating out the first dimension amounts to assuming that the dominant mode
 # is the zero'th. 
 N = length(x)
-analytic_κ¹¹ = sum((u¹ .* u¹ + u² .* u²) ./ (4 * γ), dims = 1)[:] ./ N
-analytic_κ¹² = sum((u¹ .* (v¹ + v²) + u² .* (v² - v¹)) ./ (4 * γ), dims = 1)[:] ./ N
-analytic_κ²¹ = sum((v¹ .* (u¹ + u²) + v² .* (u² - u¹)) ./ (4 * γ), dims = 1)[:] ./ N
-analytic_κ²² = sum((v¹ .* v¹ + v² .* v²) ./ (4 * γ), dims = 1)[:] ./ N
+scale = (2 * (ω^2 + γ^2))
+analytic_κ¹¹ = sum((γ * u¹ .* u¹ + γ * u² .* u²) ./ scale, dims = 1)[:] ./ N
+analytic_κ¹² = sum((u¹ .* (γ * v¹ + ω * v²) + u² .* (γ * v² - ω * v¹)) ./ scale, dims = 1)[:] ./ N
+analytic_κ²¹ = sum((v¹ .* (γ * u¹ + ω * u²) + v² .* (γ * u² - ω * u¹)) ./ scale, dims = 1)[:] ./ N
+analytic_κ²² = sum((γ * v¹ .* v¹ + γ * v² .* v²) ./ scale, dims = 1)[:] ./ N
 
 ##
 using GLMakie
