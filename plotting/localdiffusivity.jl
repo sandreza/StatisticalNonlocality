@@ -21,11 +21,12 @@ v¹ = jlfile["velocities"]["v¹"]
 v² = jlfile["velocities"]["v²"]
 
 # integrating out the first dimension amounts to assuming that the dominant mode
-# is the zero'th
-analytic_κ¹¹ = sum((u¹ .* u¹ + u² .* u²) ./ (4 * γ), dims = 1)[:]
-analytic_κ¹² = sum((u¹ .* (v¹ + v²) + u² .* (v² - v¹)) ./ (4 * γ), dims = 1)[:]
-analytic_κ²¹ = sum((v¹ .* (u¹ + u²) + v² .* (u² - u¹)) ./ (4 * γ), dims = 1)[:]
-analytic_κ²² = sum((v¹ .* v¹ + v² .* v²) ./ (4 * γ), dims = 1)[:]
+# is the zero'th. 
+N = length(x)
+analytic_κ¹¹ = sum((u¹ .* u¹ + u² .* u²) ./ (4 * γ), dims = 1)[:] ./ N
+analytic_κ¹² = sum((u¹ .* (v¹ + v²) + u² .* (v² - v¹)) ./ (4 * γ), dims = 1)[:] ./ N
+analytic_κ²¹ = sum((v¹ .* (u¹ + u²) + v² .* (u² - u¹)) ./ (4 * γ), dims = 1)[:] ./ N
+analytic_κ²² = sum((v¹ .* v¹ + v² .* v²) ./ (4 * γ), dims = 1)[:] ./ N
 
 ##
 using GLMakie

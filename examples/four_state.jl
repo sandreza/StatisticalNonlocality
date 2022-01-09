@@ -1,49 +1,20 @@
 using LinearAlgebra
-T = [-1 1 0 0; 0 -1 1 0; 0 0 -1 1; 1 0 0 -1]
 
-Λ, V = eigen(T)
-Λ, W = eigen(T')
+# overall velocity scale
+U₀ = 1.0
+# transition rate
+γ = 1e2  # 1e0 # 1e2
+# diffusivity
+κ = 1e-2 # 1e0 # 1e-2
+# boundary condition
+dirichlet = false
+# output file name
+filename = "nearly_local.jld2"
 
-# Right eigenvectors
-V⁴ = round.(V[:, 1] ./ V[1, 1])
-V³ = round.(V[:, 2] ./ V[1, 2])
-V² = round.(V[:, 3] ./ V[1, 3])
-V¹ = round.(V[:, 4] ./ V[1, 4])
-
-# Left eigenvectors
-W⁴ = round.(W[:, 1] ./ W[1, 1])
-W³ = round.(W[:, 2] ./ W[1, 2])
-W² = round.(W[:, 3] ./ W[1, 3])
-W¹ = round.(W[:, 4] ./ W[1, 4])
-
-# Flip Order (take into account later)
-W[:, 1] .= W¹
-W[:, 2] .= W²
-W[:, 3] .= W³
-W[:, 4] .= W⁴
-inv(W) * 4
-
-# Quick Check (right eigenvector)
-T * V - V * Diagonal(Λ)
-maximum(abs.(T * V - V * Diagonal(Λ))) ≤ eps(10.0)
-# Quick Check (left eigenvector)
-T' * W - W * Diagonal(reverse(Λ))    # since we flipped the order so that index 1 corresponds to the lowest eigenvalue
-W' * T - Diagonal(reverse(Λ))' * W'  # same thing, recall that ' means adjoint, thus takes the conjucate
-maximum(abs.(T' * W - W * Diagonal(reverse(Λ)))) ≤ eps(10.0)
-
-# The following transformation is what is used
-S = real.(V)
-S[:, 1] .= real.(W¹)
-S[:, 2] .= real.(0.5 * (W² + W³))
-S[:, 3] .= real.(0.5 * im * (W² - W³))
-S[:, 4] .= real.(W⁴)
-
-
-##
 using StatisticalNonlocality, LinearAlgebra, FFTW, SparseArrays
 import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
-N = 8 * 2
+N = 8 * 1
 M = 8 * 4
 Dz, z = chebyshev(M)
 a, b = 0, 2π
@@ -89,12 +60,9 @@ println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
-γ = 1e2# 1e0 # 1e2
-κ = 1e-2# 1e0 # 1e-2
+
 L = [(γ*I-κ*Δ) -γ*I 0.5*A¹; γ*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
-# Choose BC 
-dirichlet = false
 # Grab Boundary Indices
 zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
 zlifted = [zlifted 0*I 0*I; 0*I zlifted 0*I; 0*I 0*I zlifted]
@@ -163,131 +131,9 @@ function avglocaldiffusivity(E, N, M)
     local localdiff = makelocal(E)
     localdiff = [localdiff[i, i] for i = 1:size(E)[1]]
     local localdiff = reshape(localdiff, (N, M + 1))
-    local localdiff = sum(localdiff, dims = 1)[:]
+    local localdiff = sum(localdiff, dims = 1)[:] ./ N # zero'th mode
     return localdiff
 end
-##
-
-using GLMakie
-fig = Figure(resolution = (1800, 1300), title = "Nonlocal Operators")
-titlestring = "Kˣˣ"
-ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
-titlestring = "Kˣᶻ"
-ax2 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
-titlestring = "Kᶻˣ"
-ax3 = Axis(fig[1, 3], title = titlestring, titlesize = 30)
-titlestring = "Kᶻᶻ"
-ax4 = Axis(fig[2, 3], title = titlestring, titlesize = 30)
-
-colormap = :thermal
-colormap2 = :balance
-hm1 = heatmap!(ax1, EF¹¹, colormap = colormap)
-ax1.yreversed = true
-
-hm2 = heatmap!(ax2, EF¹², colormap = colormap2)
-ax2.yreversed = true
-
-hm3 = heatmap!(ax3, EF²¹, colormap = colormap2)
-ax3.yreversed = true
-
-hm4 = heatmap!(ax4, EF²², colormap = colormap)
-ax4.yreversed = true
-
-Colorbar(fig[1, 2], hm1, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[2, 2], hm2, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[1, 4], hm3, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-display(fig)
-##
-# Local
-fig = Figure(resolution = (1800, 1300), title = "Local Operators")
-titlestring = "Kˣˣ"
-ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
-titlestring = "Kˣᶻ"
-ax2 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
-titlestring = "Kᶻˣ"
-ax3 = Axis(fig[1, 3], title = titlestring, titlesize = 30)
-titlestring = "Kᶻᶻ"
-ax4 = Axis(fig[2, 3], title = titlestring, titlesize = 30)
-
-colormap = :thermal
-colormap2 = :balance
-hm1 = heatmap!(ax1, makelocal(EF¹¹), colormap = colormap)
-ax1.yreversed = true
-
-hm2 = heatmap!(ax2, makelocal(EF¹²), colormap = colormap2)
-ax2.yreversed = true
-
-hm3 = heatmap!(ax3, makelocal(EF²¹), colormap = colormap2)
-ax3.yreversed = true
-
-hm4 = heatmap!(ax4, makelocal(EF²²), colormap = colormap)
-ax4.yreversed = true
-
-Colorbar(fig[1, 2], hm1, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[2, 2], hm2, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[1, 4], hm3, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-display(fig)
-
-##
-fig = Figure(resolution = (1800, 1300), title = "Local Operators")
-titlestring = "Kˣˣ"
-ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
-titlestring = "Kˣᶻ"
-ax2 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
-titlestring = "Kᶻˣ"
-ax3 = Axis(fig[1, 2], title = titlestring, titlesize = 30)
-titlestring = "Kᶻᶻ"
-ax4 = Axis(fig[2, 2], title = titlestring, titlesize = 30)
-
-colormap = :thermal
-colormap2 = :balance
-hm1 = lines!(ax1, avglocaldiffusivity(EF¹¹, N, M), z[:])
-hm2 = lines!(ax2, avglocaldiffusivity(EF¹², N, M), z[:])
-hm3 = lines!(ax3, avglocaldiffusivity(EF²¹, N, M), z[:])
-hm4 = lines!(ax4, avglocaldiffusivity(EF²², N, M), z[:])
-
-display(fig)
-
-##
-# Stream Functions 
-fig = Figure(resolution = (1800, 1300), title = "Local Operators")
-titlestring = "ψ¹"
-ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
-titlestring = "ψ²"
-ax2 = Axis(fig[1, 3], title = titlestring, titlesize = 30)
-titlestring = "ψ³"
-ax3 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
-titlestring = "ψ⁴"
-ax4 = Axis(fig[2, 3], title = titlestring, titlesize = 30)
-
-colormap = :balance
-hm1 = heatmap!(ax1, ψ¹, colormap = colormap, interpolate = true)
-
-hm2 = heatmap!(ax2, ψ², colormap = colormap, interpolate = true)
-
-hm3 = heatmap!(ax3, ψ³, colormap = colormap, interpolate = true)
-
-hm4 = heatmap!(ax4, ψ⁴, colormap = colormap, interpolate = true)
-
-Colorbar(fig[1, 2], hm1, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[2, 2], hm2, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[1, 4], hm3, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
-    labelsize = 30, ticksize = 25, tickalign = 1,)
-display(fig)
 
 ##
 a1 = avglocaldiffusivity(EF¹¹, N, M)
@@ -321,9 +167,9 @@ function grabdiagonal(A)
     end
     return diagA
 end
+
 ##
-using JLD2  
-filename = "nearly_local.jld2"
+using JLD2
 file = jldopen("data/" * filename, "a+")
 # diffusivity
 groupname = "diffusivity"
