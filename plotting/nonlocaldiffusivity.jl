@@ -1,3 +1,4 @@
+# push!(LOAD_PATH, joinpath(@__DIR__, "..", ".."))
 using JLD2
 filepath = pwd()
 jlfile = jldopen("../data/nonlocal.jld2", "a+")

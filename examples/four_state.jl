@@ -89,8 +89,8 @@ println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
-γ = 1e0 # 1e2
-κ = 1e0 # 1e-2
+γ = 1e2# 1e0 # 1e2
+κ = 1e-2# 1e0 # 1e-2
 L = [(γ*I-κ*Δ) -γ*I 0.5*A¹; γ*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
 # Choose BC 
@@ -323,7 +323,7 @@ function grabdiagonal(A)
 end
 ##
 using JLD2  
-filename = "nonlocal.jld2"
+filename = "nearly_local.jld2"
 file = jldopen("data/" * filename, "a+")
 # diffusivity
 groupname = "diffusivity"

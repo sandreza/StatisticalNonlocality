@@ -1,8 +1,10 @@
+# push!(LOAD_PATH, joinpath(@__DIR__, "..", ".."))
 using JLD2
 filepath = pwd()
-jlfile = jldopen("../data/nearly_local.jld2", "a+")
-jlfile = jldopen("../data/nonlocal.jld2", "a+")
-
+# jlfile = jldopen("../data/nearly_local.jld2", "a+")
+jlfile = jldopen("data/nonlocal.jld2", "a+")
+# filepath = pwd()
+# jlfile = jldopen("data/nearly_local.jld2", "a+")
 κ¹¹ = jlfile["localdiffusivity"]["κ11"]
 κ¹² = jlfile["localdiffusivity"]["κ12"]
 κ²¹ = jlfile["localdiffusivity"]["κ21"]
@@ -28,7 +30,7 @@ A = maximum(κ¹¹)
 k = 2π / (x[end] - x[1] + x[2]-x[1])
 ℓ = π / (z[1] - z[end])
 kdℓ = k/ℓ
-f = maximum(κ¹²) / (A * kdℓ)
+f = maximum(κ²¹) / (A * kdℓ)
 
 lines!(ax1, A * (sin.(ℓ * z) .^ 2), z, color = :red)
 scatter!(ax1, κ¹¹, z, color = :blue)
