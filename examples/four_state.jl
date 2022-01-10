@@ -13,10 +13,10 @@ U₀ = 1.0
 # boundary condition
 dirichlet = false
 # output file name
-filename = "nonlocal.jld2"
+filename = "nonlocal_hr.jld2"
 
-N = 8 * 2
-M = 8 * 4
+N = 4 * 2
+M = 8 * 8 * 2
 
 Dz, z = chebyshev(M)
 a, b = 0, 2π

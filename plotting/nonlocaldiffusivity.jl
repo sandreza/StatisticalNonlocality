@@ -2,11 +2,22 @@
 using JLD2
 filepath = pwd()
 jlfile = jldopen("../data/nonlocal.jld2", "a+")
-
+# jlfile = jldopen("data/nonlocal.jld2", "a+")
+jlfile = jldopen("../data/nonlocal_hr.jld2", "a+")
 EF¹¹ = jlfile["diffusivity"]["K11"]
 EF¹² = jlfile["diffusivity"]["K12"]
 EF²¹ = jlfile["diffusivity"]["K21"]
 EF²² = jlfile["diffusivity"]["K22"]
+x = jlfile["grid"]["x"]
+z = jlfile["grid"]["z"]
+N = length(x)
+M = length(z)
+tmpE = copy(EF¹¹)
+EF¹¹ = reshape(permutedims(reshape(EF¹¹, (N, M, N, M)), (2, 1, 4, 3)), (N * M, N * M))
+EF¹² = reshape(permutedims(reshape(EF¹², (N, M, N, M)), (2, 1, 4, 3)), (N * M, N * M))
+EF²¹ = reshape(permutedims(reshape(EF²¹, (N, M, N, M)), (2, 1, 4, 3)), (N * M, N * M))
+EF²² = reshape(permutedims(reshape(EF²², (N, M, N, M)), (2, 1, 4, 3)), (N * M, N * M))
+# 2 goes to 1, 1 goes to 2, 4 goes to 3, 3 goes to 4
 ##
 
 using GLMakie
