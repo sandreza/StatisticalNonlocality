@@ -2,8 +2,9 @@
 using JLD2
 filepath = pwd()
 jlfile = jldopen("../data/nonlocal.jld2", "a+")
+# jlfile = jldopen("../data/nearly_local.jld2", "a+")
 # jlfile = jldopen("data/nonlocal.jld2", "a+")
-jlfile = jldopen("../data/nonlocal_hr.jld2", "a+")
+# jlfile = jldopen("../data/nonlocal_hr.jld2", "a+")
 EF¹¹ = jlfile["diffusivity"]["K11"]
 EF¹² = jlfile["diffusivity"]["K12"]
 EF²¹ = jlfile["diffusivity"]["K21"]
