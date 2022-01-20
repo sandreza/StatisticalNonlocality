@@ -35,29 +35,38 @@ analytic_κ²² = sum((γ * v¹ .* v¹ + γ * v² .* v²) ./ scale, dims = 1)[:]
 ##
 using GLMakie
 
+options = (; xlabel = "x", ylabel = "y", ylabelsize = 32,
+    xlabelsize = 32, xgridstyle = :dash, ygridstyle = :dash, xtickalign = 1,
+    xticksize = 30, ytickalign = 1, yticksize = 30,
+    xticklabelsize = 30, yticklabelsize = 30)
+
 fig = Figure(resolution = (1800, 1300), title = "Local Operators")
 titlestring = "Kˣˣ"
-ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
+ax1 = Axis(fig[1, 1]; options..., title = titlestring, titlesize = 30)
 titlestring = "Kˣᶻ"
-ax2 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
+ax2 = Axis(fig[1, 2]; options..., title = titlestring, titlesize = 30)
 titlestring = "Kᶻˣ"
-ax3 = Axis(fig[1, 2], title = titlestring, titlesize = 30)
+ax3 = Axis(fig[2, 1]; options..., title = titlestring, titlesize = 30)
 titlestring = "Kᶻᶻ"
-ax4 = Axis(fig[2, 2], title = titlestring, titlesize = 30)
+ax4 = Axis(fig[2, 2]; options..., title = titlestring, titlesize = 30)
 
-colormap = :thermal
-colormap2 = :balance
+plot_string_1 = "analytic"
+plot_string_2 = "numerical"
 
-lines!(ax1, analytic_κ¹¹, z, color = :red)
-scatter!(ax1, κ¹¹, z, color = :blue)
+ln1 = lines!(ax1, analytic_κ¹¹, z, color = :red)
+sc1 = scatter!(ax1, κ¹¹, z, color = :blue)
+axislegend(ax1, [ln1, sc1], [plot_string_1, plot_string_2], position = :rc)
 
-lines!(ax2, analytic_κ¹², z, color = :red)
-scatter!(ax2, κ¹², z, color = :blue)
+ln2 = lines!(ax2, analytic_κ¹², z, color = :red)
+sc2 = scatter!(ax2, κ¹², z, color = :blue)
+axislegend(ax2, [ln2, sc2], [plot_string_1, plot_string_2], position = :rt)
 
-lines!(ax3, analytic_κ²¹, z, color = :red)
-scatter!(ax3, κ²¹, z, color = :blue)
+ln3 = lines!(ax3, analytic_κ²¹, z, color = :red)
+sc3 = scatter!(ax3, κ²¹, z, color = :blue)
+axislegend(ax3, [ln3, sc3], [plot_string_1, plot_string_2], position = :rc)
 
-lines!(ax4, analytic_κ²², z, color = :red)
-scatter!(ax4, κ²², z, color = :blue)
+ln4 = lines!(ax4, analytic_κ²², z, color = :red)
+sc4 = scatter!(ax4, κ²², z, color = :blue)
+axislegend(ax4, [ln4, sc4], [plot_string_1, plot_string_2], position = :rt)
 
 display(fig)
