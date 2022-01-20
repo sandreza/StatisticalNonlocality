@@ -26,9 +26,9 @@ fig = Figure(resolution = (1800, 1300), title = "Nonlocal Operators")
 titlestring = "Kˣˣ"
 ax1 = Axis(fig[1, 1], title = titlestring, titlesize = 30)
 titlestring = "Kˣᶻ"
-ax2 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
+ax2 = Axis(fig[1, 3], title = titlestring, titlesize = 30)
 titlestring = "Kᶻˣ"
-ax3 = Axis(fig[1, 3], title = titlestring, titlesize = 30)
+ax3 = Axis(fig[2, 1], title = titlestring, titlesize = 30)
 titlestring = "Kᶻᶻ"
 ax4 = Axis(fig[2, 3], title = titlestring, titlesize = 30)
 

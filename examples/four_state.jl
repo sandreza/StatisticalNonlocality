@@ -62,7 +62,7 @@ println(length(tmp.nzval))
 droprelativezeros!(tmp)
 println(length(tmp.nzval))
 
-
+# Create the block linear operator
 L = [(γ*I-κ*Δ) -ω*I 0.5*A¹; ω*I (γ*I-κ*Δ) -0.5*A²; A¹ -A² (2*γ*I-κ*Δ)]
 
 # Grab Boundary Indices
@@ -101,7 +101,11 @@ u¹ = Diagonal(∂z * ψ¹[:])
 u² = Diagonal(∂z * ψ²[:])
 v¹ = Diagonal(-∂x * ψ¹[:])
 v² = Diagonal(-∂x * ψ²[:])
-# NEED TO ACCOUNT FOR BCS in U, V
+# Account for Boundary conditions in U and V 
+# Can be thought of as an operator that masks the values on boundaries 
+# Technically the mask is applied to the entire rhs, but since we want the operator 
+# we just applied it here.
+# This is equivalent since diagonal matrices commute and masking is idempotent
 U = -0.5 * [u¹; u²; 0 * I]
 Uᵀ = [u¹ u² 0 * I]
 V = -0.5 * [v¹; v²; 0 * I]
@@ -111,13 +115,13 @@ for ∂i in ∂Ω
     V[∂i, :] .= 0.0
 end
 
-EF¹¹ = Uᵀ * G * U
-EF¹² = Uᵀ * G * V
-EF²¹ = Vᵀ * G * U
-EF²² = Vᵀ * G * V
+EF¹¹ = Uᵀ * G * U # flux in x due to gradients in x
+EF¹² = Uᵀ * G * V # flux in x due to gradients in z
+EF²¹ = Vᵀ * G * U # flux in z due to gradients in x
+EF²² = Vᵀ * G * V # flux in z due to gradients in z
 
 E = [EF¹¹ EF¹²; EF²¹ EF²²]
-# Check that all the eigenvalues are negative
+# Check that all the eigenvalues are negative (we will multiply by -1 later)
 λE = eigvals(E)
 bools = real.(λE) .≤ eps(1e3 * maximum(abs.(λE)))
 sum(bools) == length(λE)
