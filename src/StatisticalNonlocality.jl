@@ -1,9 +1,7 @@
 module StatisticalNonlocality
 
-# Discrete OU process ALA Charlie Doering
-include("discrete_ornstein_uhlenbeck.jl")
+include("transition_matrices.jl")
 
-# Fourier-Chebyshev ALA John Boyd 
 include("spectral.jl")
 
 # Utilities 

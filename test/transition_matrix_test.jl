@@ -1,13 +1,17 @@
-import StatisticalNonlocality: ou_transition_matrix
+import StatisticalNonlocality: ou_transition_matrix, uniform_phase
 
 @testset "Transition Matrix Column Sum Zero" begin
     for n in 1:10
         M = ou_transition_matrix(n)
         @test all(abs.(sum(M, dims = 1)) .≤ eps(n / 2))
+        if n > 1
+            M = uniform_phase(n)
+            @test all(abs.(sum(M, dims = 1)) .≤ eps(n / 2))
+        end
     end
 end
 
-@testset "Transition Matrix Correctness Test for n in 1:2" begin
+@testset "OU Transition Matrix Correctness Test for n in 1:2" begin
     n = 1
     M = ou_transition_matrix(n)
     Mh = [
@@ -24,6 +28,14 @@ end
         0 1/2 -1
     ]
     @test all(abs.(Mh - M) .≤ eps(n / 2))
+end
+
+@testset "Uniform Phase Transition Matrix Correctness Test for n = 4" begin
+    n = 4
+    M = uniform_phase(n)
+    Mh = [-1 1 0 0; 0 -1 1 0; 0 0 -1 1; 1 0 0 -1]
+    @test all(abs.(Mh - M) .≤ eps(n / 2))
+
 end
 
 @testset "Eigenvalue Test for n in 1:10" begin

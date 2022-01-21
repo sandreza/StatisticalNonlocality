@@ -3,19 +3,20 @@ import StatisticalNonlocality: chebyshev, fourier_nodes, fourier_wavenumbers
 import StatisticalNonlocality: droprelativezeros!
 
 # overall velocity scale
-U₀ = 1.0
+U₀ = 1e0
 # transition rate
-γ = 1e0  # 1e0 # 1e2
+γ = 1e2  # 1e0 # 1e2
 # diffusivity
-κ = 1e-0 # 1e0 # 1e-2
+κ = 1e-2 # 1e0 # 1e-2
 # phase 
 ω = γ
-# boundary condition
+# boundary condition, dirichlet = false is neumann
 dirichlet = false
 # output file name
-filename = "nonlocal.jld2"
+filename = "local.jld2"
 
-N = 4 * 4
+# minimal configuration is M = 64, N = 8
+N = 8
 M = 8 * 8 
 
 Dz, z = chebyshev(M)
@@ -122,9 +123,10 @@ EF²² = Vᵀ * G * V # flux in z due to gradients in z
 
 E = [EF¹¹ EF¹²; EF²¹ EF²²]
 # Check that all the eigenvalues are negative (we will multiply by -1 later)
+# Note that there will be spurious eigenvalues due to the use of chebyshev
 λE = eigvals(E)
 bools = real.(λE) .≤ eps(1e3 * maximum(abs.(λE)))
-sum(bools) == length(λE)
+println(sum(bools) == length(λE))
 
 maximum(abs.(EF²¹ + EF¹²))
 EF¹¹ *= -1.0
