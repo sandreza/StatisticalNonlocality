@@ -1,4 +1,5 @@
 using LinearAlgebra
+using JLD2
 import StatisticalNonlocality: ou_transition_matrix
 import StatisticalNonlocality: fourier
 
@@ -41,8 +42,14 @@ fluxkernel =
 σ = svdvals(fluxkernel)
 
 
-using JLD2
-file = jldopen("data/" * filename, "a+")
+data_directory = "data"
+mkpath(data_directory)
+filepath = data_directory * "/" * filename
+if isfile(filepath)
+    rm(filepath)
+end
+
+file = jldopen(filepath, "a+")
 
 file["kernel"] = fluxkernel
 file["eigenvalues"] = λ

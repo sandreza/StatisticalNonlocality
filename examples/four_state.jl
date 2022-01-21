@@ -9,14 +9,14 @@ U₀ = 1.0
 # diffusivity
 κ = 1e-0 # 1e0 # 1e-2
 # phase 
-ω = γ 
+ω = γ
 # boundary condition
 dirichlet = false
 # output file name
-filename = "nonlocal_hr.jld2"
+filename = "nonlocal.jld2"
 
-N = 4 * 2
-M = 8 * 8 * 2
+N = 4 * 4
+M = 8 * 8 
 
 Dz, z = chebyshev(M)
 a, b = 0, 2π
@@ -133,10 +133,16 @@ EF²¹ *= -1.0
 EF²² *= -1.0
 
 makelocal(E) = Array(Diagonal(sum(E, dims = 2)[:]))
-function avglocaldiffusivity(E, N, M)
+
+function localdiffusivity(E, N, M)
     local localdiff = makelocal(E)
     localdiff = [localdiff[i, i] for i = 1:size(E)[1]]
     local localdiff = reshape(localdiff, (N, M + 1))
+    return localdiff
+end
+
+function avglocaldiffusivity(E, N, M)
+    local localdiff = localdiffusivity(E, N, M)
     local localdiff = sum(localdiff, dims = 1)[:] ./ N # zero'th mode
     return localdiff
 end
@@ -153,7 +159,15 @@ end
 
 ##
 using JLD2
-file = jldopen("data/" * filename, "a+")
+# always overwrite
+data_directory = "data"
+mkpath(data_directory)
+filepath = data_directory * "/" * filename
+if isfile(filepath)
+    rm(filepath)
+end
+##
+file = jldopen(filepath, "a+")
 # diffusivity
 groupname = "diffusivity"
 JLD2.Group(file, groupname)
@@ -195,8 +209,17 @@ file[groupname]["u¹"] = reshape(grabdiagonal(u¹), size(ψ¹))
 file[groupname]["u²"] = reshape(grabdiagonal(u²), size(ψ¹))
 file[groupname]["v¹"] = reshape(grabdiagonal(v¹), size(ψ¹))
 file[groupname]["v²"] = reshape(grabdiagonal(v²), size(ψ¹))
+
 # local diffusivities
 groupname = "localdiffusivity"
+JLD2.Group(file, groupname)
+file[groupname]["κ11"] = localdiffusivity(EF¹¹, N, M)
+file[groupname]["κ12"] = localdiffusivity(EF¹², N, M)
+file[groupname]["κ21"] = localdiffusivity(EF²¹, N, M)
+file[groupname]["κ22"] = localdiffusivity(EF²², N, M)
+
+# zonally averaged local diffusivities
+groupname = "averagelocaldiffusivity"
 JLD2.Group(file, groupname)
 file[groupname]["κ11"] = avglocaldiffusivity(EF¹¹, N, M)
 file[groupname]["κ12"] = avglocaldiffusivity(EF¹², N, M)

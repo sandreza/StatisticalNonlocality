@@ -21,8 +21,14 @@ fluxkernel = -U * inv(κ .* D^2 - γ * I) * U
 λ = eigvals(fluxkernel)
 σ = svdvals(fluxkernel)
 
-using JLD2
-file = jldopen("data/" * filename, "a+")
+data_directory = "data"
+mkpath(data_directory)
+filepath = data_directory * "/" * filename
+if isfile(filepath)
+    rm(filepath)
+end
+
+file = jldopen(filepath, "a+")
 
 file["kernel"] = fluxkernel
 file["eigenvalues"] = λ

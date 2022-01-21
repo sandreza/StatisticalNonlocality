@@ -1,4 +1,6 @@
 using LinearAlgebra
+
+# Base transition matrix
 T = [-1 1 0 0; 0 -1 1 0; 0 0 -1 1; 1 0 0 -1]
 
 Λ, V = eigen(T)
@@ -44,7 +46,7 @@ display(inv(S) * T * S)
 
 # The following partitions the magnitude of
 # the anti-symmetric component and the symmetric component
-# of the local diffusivity tensor
+# of the transition matrix
 sT = (T + T') / 2
 aT = (T - T') / 2
 λ = 1.0
