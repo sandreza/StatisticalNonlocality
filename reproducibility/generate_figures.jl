@@ -14,6 +14,6 @@ for file in files
     save("data/"*file * "_local_diffusivity.png", fig)
     toc = Base.time()
 
-    total_time += toc - tic
+    global total_time += toc - tic
 end
 println("total time to generate plots ",  total_time , " seconds ")

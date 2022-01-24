@@ -32,7 +32,7 @@ for (parameters, filename) in zip(parameter_list, filename_list)
     four_state(parameters; M = 8 * 8, N = 8, filename = filename, dirichlet = false)
     toc = Base.time()
     println("Finished running in ", toc - tic, " seconds.")
-    total_time += toc - tic
+    global total_time += toc - tic
     println("------")
 end
 println("Total time to reproduce data = ", total_time, " seconds")
