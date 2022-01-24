@@ -1,12 +1,9 @@
 # push!(LOAD_PATH, joinpath(@__DIR__, "..", ".."))
 using JLD2
-# jlfile = jldopen("data/nearly_local.jld2", "a+")
-# jlfile = jldopen("data/nearly_local_symmetric.jld2", "a+")
 jlfile = jldopen("data/local.jld2", "a+")
-# jlfile = jldopen("../data/nonlocal_symmetric.jld2", "a+")
 # jlfile = jldopen("data/nonlocal.jld2", "a+")
-# filepath = pwd()
-# jlfile = jldopen("data/nearly_local.jld2", "a+")
+# jlfile = jldopen("data/nonlocal_more_velocity.jld2", "a+")
+
 κ¹¹ = jlfile["averagelocaldiffusivity"]["κ11"]
 κ¹² = jlfile["averagelocaldiffusivity"]["κ12"]
 κ²¹ = jlfile["averagelocaldiffusivity"]["κ21"]
@@ -92,8 +89,8 @@ ax2 = Axis(fig[2, 1])
 ax3 = Axis(fig[1, 2])
 ax4 = Axis(fig[2, 2])
 cmap = :balance
-heatmap!(ax1,x, z, κ¹¹, colormap = cmap, interpolate = true)
-heatmap!(ax2,x, z, κ²¹, colormap = cmap, interpolate = true)
-heatmap!(ax3,x, z, κ¹², colormap = cmap, interpolate = true)
-heatmap!(ax4,x, z, κ²², colormap = cmap, interpolate = true)
+heatmap!(ax1, x, z, κ¹¹, colormap = cmap, interpolate = true)
+heatmap!(ax2, x, z, κ²¹, colormap = cmap, interpolate = true)
+heatmap!(ax3, x, z, κ¹², colormap = cmap, interpolate = true)
+heatmap!(ax4, x, z, κ²², colormap = cmap, interpolate = true)
 display(fig)

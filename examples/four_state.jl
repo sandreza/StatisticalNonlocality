@@ -19,6 +19,8 @@ filename = "local.jld2"
 N = 8
 M = 8 * 8 
 
+# The first step is to build the discretization and the block operators
+
 Dz, z = chebyshev(M)
 a, b = 0, 2π
 k = fourier_wavenumbers(N, L = b - a)

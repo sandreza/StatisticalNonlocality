@@ -1,10 +1,10 @@
 # push!(LOAD_PATH, joinpath(@__DIR__, "..", ".."))
 using JLD2
 
-jlfile = jldopen("data/local.jld2", "a+")
-# jlfile = jldopen("../data/nearly_local.jld2", "a+")
+# jlfile = jldopen("data/local.jld2", "a+")
 # jlfile = jldopen("data/nonlocal.jld2", "a+")
-# jlfile = jldopen("../data/nonlocal_hr.jld2", "a+")
+jlfile = jldopen("data/nonlocal_symmetric.jld2", "a+")
+# jlfile = jldopen("data/nonlocal_more_velocity.jld2")
 EF¹¹ = jlfile["diffusivity"]["K11"]
 EF¹² = jlfile["diffusivity"]["K12"]
 EF²¹ = jlfile["diffusivity"]["K21"]

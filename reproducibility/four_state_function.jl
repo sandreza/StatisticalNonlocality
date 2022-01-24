@@ -20,6 +20,33 @@ function construct_four_state_filename(parameters, M, N, dirichlet)
     return base_name * prod(descriptor)
 end
 
+# Helper functions
+
+makelocal(E) = Array(Diagonal(sum(E, dims = 2)[:]))
+
+function localdiffusivity(E, N, M)
+    local localdiff = makelocal(E)
+    localdiff = [localdiff[i, i] for i = 1:size(E)[1]]
+    local localdiff = reshape(localdiff, (N, M + 1))
+    return localdiff
+end
+
+function avglocaldiffusivity(E, N, M)
+    local localdiff = localdiffusivity(E, N, M)
+    local localdiff = sum(localdiff, dims = 1)[:] ./ N # zero'th mode
+    return localdiff
+end
+
+# the local diffusivity is proportional to 1/γ
+function grabdiagonal(A)
+    MM = minimum(size(A))
+    diagA = zeros(MM)
+    for i in 1:MM
+        diagA[i] = A[i, i]
+    end
+    return diagA
+end
+
 function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet = false)
     (; U, γ, ω, κ) = parameters
     U₀ = U
@@ -123,31 +150,6 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     EF²¹ *= -1.0
     EF²² *= -1.0
 
-    makelocal(E) = Array(Diagonal(sum(E, dims = 2)[:]))
-
-    function localdiffusivity(E, N, M)
-        local localdiff = makelocal(E)
-        localdiff = [localdiff[i, i] for i = 1:size(E)[1]]
-        local localdiff = reshape(localdiff, (N, M + 1))
-        return localdiff
-    end
-
-    function avglocaldiffusivity(E, N, M)
-        local localdiff = localdiffusivity(E, N, M)
-        local localdiff = sum(localdiff, dims = 1)[:] ./ N # zero'th mode
-        return localdiff
-    end
-
-    # the local diffusivity is proportional to 1/γ
-    function grabdiagonal(A)
-        MM = minimum(size(A))
-        diagA = zeros(MM)
-        for i in 1:MM
-            diagA[i] = A[i, i]
-        end
-        return diagA
-    end
-
     ##
     # always overwrite
     data_directory = "data"
@@ -220,22 +222,3 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     close(file)
     return filename
 end
-
-# Test the two functions 
-# overall velocity scale
-U₀ = 1e0
-# transition rate
-γ = 1e2  # 1e0 # 1e2
-# diffusivity
-κ = 1e-2 # 1e0 # 1e-2
-# phase 
-ω = γ
-# boundary condition, dirichlet = false is neumann
-dirichlet = false
-# minimal configuration is M = 64, N = 8
-N = 8
-M = 8 * 8
-
-parameters = (; U, γ, κ, ω)
-filename = four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet = dirichlet)
-jlfile = jldopen("data/" * filename)
