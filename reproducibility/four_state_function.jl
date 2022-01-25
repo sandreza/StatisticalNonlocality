@@ -37,7 +37,6 @@ function avglocaldiffusivity(E, N, M)
     return localdiff
 end
 
-# the local diffusivity is proportional to 1/γ
 function grabdiagonal(A)
     MM = minimum(size(A))
     diagA = zeros(MM)
@@ -75,7 +74,6 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
 
     zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
 
-    ##
     # u⃗⋅∇
     advection_operator(ψ, ∂x, ∂z) =
         Diagonal(∂z * ψ[:]) * ∂x + Diagonal(-∂x * ψ[:]) * ∂z
@@ -117,8 +115,6 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     end
     ∂Ω = vcat(∂Ω¹, ∂Ω²)
 
-    Q, R = qr(L)
-
     G = qr(L) \ I
     u¹ = Diagonal(∂z * ψ¹[:])
     u² = Diagonal(∂z * ψ²[:])
@@ -150,7 +146,6 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     EF²¹ *= -1.0
     EF²² *= -1.0
 
-    ##
     # always overwrite
     data_directory = "data"
     mkpath(data_directory)
@@ -158,8 +153,9 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     if isfile(filepath)
         rm(filepath)
     end
-    ##
+
     file = jldopen(filepath, "a+")
+    
     # diffusivity
     groupname = "diffusivity"
     JLD2.Group(file, groupname)
@@ -167,6 +163,7 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     file[groupname]["K12"] = EF¹²
     file[groupname]["K21"] = EF²¹
     file[groupname]["K22"] = EF²²
+
     # parameters
     groupname = "parameters"
     JLD2.Group(file, groupname)
@@ -174,11 +171,13 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     file[groupname]["ω"] = ω
     file[groupname]["κ"] = κ
     file[groupname]["U"] = U₀
+
     # grid 
     groupname = "grid"
     JLD2.Group(file, groupname)
     file[groupname]["x"] = x
     file[groupname]["z"] = z
+
     # transition matrix 
     groupname = "transition"
     JLD2.Group(file, groupname)
@@ -188,6 +187,7 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     aT = (T - T') / 2
 
     file[groupname]["T"] = γ * sT + ω * aT
+
     # streamfunction
     groupname = "streamfunction"
     JLD2.Group(file, groupname)
@@ -195,6 +195,7 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     file[groupname]["ψ²"] = ψ²
     file[groupname]["ψ³"] = ψ³
     file[groupname]["ψ⁴"] = ψ⁴
+
     # velocities
     groupname = "velocities"
     JLD2.Group(file, groupname)
