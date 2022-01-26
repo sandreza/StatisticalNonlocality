@@ -36,7 +36,7 @@ end
 M = 1000
 markov_chain = zeros(Int, M)
 markov_chain[1] = 4
-for i in 2:M
+for i = 2:M
     markov_chain[i] = next_state(markov_chain[i-1], ceT)
 end
 
@@ -68,3 +68,40 @@ sum(tmp * [1, 0] * Diagonal([-1 1])) + sum(tmp * [0, 1] * Diagonal([-1 1]))
 # 1/2 * {-1} * (-1 * α + 1 * (1-α)) + 1/2 * {1} * (-1 * (1-α) + 1 * α)
 1 / 2 * (-1) * (-1 * α + 1 * (1 - α)) + 1 / 2 * (1) * (-1 * (1 - α) + 1 * α)
 [-1 1] * tmp^100 * [-1 / 2, 1 / 2]
+
+[-1 , 1 ]' * tmp * [-1 / 2, 1 / 2]
+λ, V = eigen(tmp)
+Λ = Diagonal(λ)
+V⁻¹ = inv(V)
+tmpmat = zeros(size(tmp))
+for i = 1:length(λ)
+    tmpmat += λ[i] * V[:, i] * transpose(V⁻¹[i, :])
+end
+
+## 
+V⁻¹ = inv(V)
+V * Λ * V⁻¹ - tmp
+Diagonal([0, 1])
+V * Λ * V⁻¹
+V * Diagonal([0, 1]) * V⁻¹
+V[:, 2] * V⁻¹[2, :]'
+
+##
+λ, V = eigen(T)
+Λ = Diagonal(λ)
+V⁻¹ = inv(V)
+tmp = zeros(length(λ))
+tmp[end] = 1
+Λ∞ = Diagonal(tmp)
+V * Λ * V⁻¹ - T
+real.(V * Λ∞ * V⁻¹)
+real.(V[:, end] * transpose(V⁻¹[end, :]))
+
+tmpmat = zeros(ComplexF64, size(T))
+
+for i = 1:length(λ)
+    tmpmat += λ[i] * V[:, i] * transpose(V⁻¹[i, :])
+end
+
+T̃ = real.(tmpmat)
+norm(T̃ - T)
