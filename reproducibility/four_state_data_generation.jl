@@ -43,14 +43,18 @@ parameters = (; U = 1e0, γ = 1e-1, κ = 1e1, ω = 1e-1)
 filename = "nonlocal_more_diffusivity_less_transition.jld2"
 push!(parameter_list, parameters)
 push!(filename_list, filename)
-
+# reverse transition
+parameters = (; U = 1e0, γ = 1e-0, κ = 1e0, ω = -1e-0)
+filename = "nonlocal_reverse.jld2"
+push!(parameter_list, parameters)
+push!(filename_list, filename)
 
 total_time = 0
 for (parameters, filename) in zip(parameter_list, filename_list)
     println("------")
     println("Currently on ", filename)
     tic = Base.time()
-    four_state(parameters; M = 8 * 8, N = 8, filename = filename, dirichlet = false)
+    four_state(parameters; M = 8 * 8, N = 16, filename = filename, dirichlet = false)
     toc = Base.time()
     println("Finished running in ", toc - tic, " seconds.")
     global total_time += toc - tic
