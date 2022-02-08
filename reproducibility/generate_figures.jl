@@ -1,6 +1,6 @@
 include("plotting_utils.jl")
 
-files = ["local", "nonlocal", "nonlocal_symmetric", "nonlocal_less_diffusivity", "nonlocal_more_velocity", "nonlocal_less_transition", "semilocal", "nonlocal_more_diffusivity_less_transition"]
+files = ["local", "nonlocal", "nonlocal_symmetric", "nonlocal_less_diffusivity", "nonlocal_more_velocity", "nonlocal_less_transition", "semilocal", "nonlocal_more_diffusivity_less_transition", "nonlocal_reverse"]
 
 total_time = 0
 for file in files
