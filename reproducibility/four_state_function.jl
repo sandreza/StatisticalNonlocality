@@ -46,6 +46,11 @@ function grabdiagonal(A)
     return diagA
 end
 
+function advection_operator(ψ, ∂x, ∂z) 
+    return Diagonal(∂z * ψ[:]) * ∂x + Diagonal(-∂x * ψ[:]) * ∂z
+end
+
+# Main Function
 function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet = false)
     (; U, γ, ω, κ) = parameters
     U₀ = U
@@ -74,10 +79,6 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
 
     zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
 
-    # u⃗⋅∇
-    advection_operator(ψ, ∂x, ∂z) =
-        Diagonal(∂z * ψ[:]) * ∂x + Diagonal(-∂x * ψ[:]) * ∂z
-
     A¹ = advection_operator(ψ¹, ∂x, ∂z)
     A² = advection_operator(ψ², ∂x, ∂z)
 
@@ -90,6 +91,8 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     zlifted = sparse(kron(Diagonal(z[:]), I + zeros(N, N)))
     zlifted = [zlifted 0*I 0*I; 0*I zlifted 0*I; 0*I 0*I zlifted]
     ∂Ω¹ = zlifted.rowval[zlifted.nzval.==z[1]]
+
+    # Impose Boundary conditions at z[1]
     for (i, ∂i) in enumerate(∂Ω¹)
         if dirichlet
             L[∂i, :] .= 0.0
@@ -101,6 +104,8 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
             L[∂i, inds] .= ∂z[∂Ω¹[(i-1)%N+1], :]
         end
     end
+
+    # Impost boundary conditions at z[end]
     ∂Ω² = zlifted.rowval[zlifted.nzval.==z[end]]
     for (i, ∂i) in enumerate(∂Ω²)
         if dirichlet
@@ -113,9 +118,11 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
             L[∂i, inds] .= ∂z[∂Ω²[(i-1)%N+1], :]
         end
     end
-    ∂Ω = vcat(∂Ω¹, ∂Ω²)
 
+    # Find the Greens Function
     G = qr(L) \ I
+
+    # Grab Components of the Velocity field
     u¹ = Diagonal(∂z * ψ¹[:])
     u² = Diagonal(∂z * ψ²[:])
     v¹ = Diagonal(-∂x * ψ¹[:])
@@ -129,6 +136,8 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     Uᵀ = [u¹ u² 0 * I]
     V = -0.5 * [v¹; v²; 0 * I]
     Vᵀ = [v¹ v² 0 * I]
+
+    ∂Ω = vcat(∂Ω¹, ∂Ω²)
     for ∂i in ∂Ω
         U[∂i, :] .= 0.0
         V[∂i, :] .= 0.0
@@ -155,7 +164,7 @@ function four_state(parameters; M = 8 * 8, N = 8, filename = nothing, dirichlet 
     end
 
     file = jldopen(filepath, "a+")
-    
+
     # diffusivity
     groupname = "diffusivity"
     JLD2.Group(file, groupname)
