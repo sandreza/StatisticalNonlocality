@@ -1,4 +1,5 @@
 import StatisticalNonlocality: ou_transition_matrix, uniform_phase
+import StatisticalNonlocality: discrete_laplacian
 
 @testset "Transition Matrix Column Sum Zero" begin
     for n in 1:10
@@ -7,6 +8,8 @@ import StatisticalNonlocality: ou_transition_matrix, uniform_phase
         if n > 1
             M = uniform_phase(n)
             @test all(abs.(sum(M, dims = 1)) .≤ eps(n / 2))
+            Δ = discrete_laplacian(n)
+            @test all(abs.(sum(Δ, dims = 1)) .≤ eps(n^2 / 2))
         end
     end
 end
@@ -43,5 +46,12 @@ end
         λ_exact = collect((-n):0)
         λ_approx = eigvals(ou_transition_matrix(n))
         @test all(abs.(λ_exact - λ_approx) .≤ eps(20.0 * n))
+    end
+end
+
+@testset "Symmetry Test for Discrete Laplacian" begin
+    for n in 4:10
+        Δ = discrete_laplacian(n)
+        @test norm(Δ - Δ') ≤ eps(norm(Δ))
     end
 end
