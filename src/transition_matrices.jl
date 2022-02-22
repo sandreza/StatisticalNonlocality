@@ -24,15 +24,16 @@ function uniform_phase(N)
 end
 
 # Discrete Laplacian
-function discrete_laplacian(n) 
-    Δ = zeros(n,n)
+function discrete_laplacian(n)
+    Δ = zeros(n, n)
     for i in 2:n-1
-        Δ[i,i] = -2
-        Δ[i,i+1] = 1
-        Δ[i,i-1] = 1
+        Δ[i, i] = -2
+        Δ[i, i+1] = 1
+        Δ[i, i-1] = 1
     end
-    Δ[1,1] = Δ[end,end] = -1
-    Δ[1,2] = 1
+    Δ[1, 1] = Δ[end, end] = -1
+    Δ[1, 2] = 1
     Δ[end, end-1] = 1
     return Δ
 end
+
