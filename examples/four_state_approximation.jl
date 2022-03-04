@@ -55,13 +55,14 @@ function grabdiagonal(A)
 end
 
 # random phase wavenumbers
-wavemax = 3.0 # change to 3 when automated
+wavemax = 0.5 # change to 3 when automated
 𝓀 = collect(-wavemax:0.5:wavemax)
 𝓀ˣs = reshape(𝓀, (length(𝓀), 1))
 𝓀ʸs = reshape(𝓀, (1, length(𝓀)))
 A = @. 0.1 * (𝓀ˣs * 𝓀ˣs + 𝓀ʸs * 𝓀ʸs)^(-11 / 12)
 A[A.==Inf] .= 0.0
 
+tic = Base.time()
 for (i, 𝓀ˣ) in enumerate(𝓀ˣs), (j, 𝓀ʸ) in enumerate(𝓀ʸs)
     filename = "lots_of_diffusivities_kx_" * string(𝓀ˣ) * "ky_" * string(𝓀ʸ) * ".jld2"
     println("-----------")
@@ -174,3 +175,6 @@ for (i, 𝓀ˣ) in enumerate(𝓀ˣs), (j, 𝓀ʸ) in enumerate(𝓀ʸs)
     close(file)
 
 end
+toc = Base.time()
+
+println("The time for the simulation is ", (toc - tic)/60, " minutes ")
