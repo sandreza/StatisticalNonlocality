@@ -52,3 +52,12 @@ aT = (T - T') / 2
 λ = 1.0
 ω = 1.0
 inv(S) * (λ * sT + ω * aT) * S
+
+## check kronecker products corresponding to random phase
+kroneckered_phase = kron(sT, I + 0 * sT) + kron(I + 0 * sT, sT)
+Λ, V = eigen(kroneckered_phase)
+
+## check out higher dimensional one
+idmat = I + 0 * sT # the identity matrix
+kroneckered_phase = kron(sT, idmat, idmat) + kron(idmat, sT, idmat) + kron(idmat, idmat, sT)
+Λ, V = eigen(kroneckered_phase)
