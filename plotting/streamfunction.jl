@@ -2,7 +2,7 @@
 using JLD2
 filepath = pwd()
 # jlfile = jldopen("../data/nearly_local.jld2", "a+")
-jlfile = jldopen("../data/nonlocal.jld2", "a+")
+jlfile = jldopen("data/nonlocal_less_diffusivity.jld2", "a+")
 # jlfile = jldopen("data/nonlocal.jld2", "a+")
 # filepath = pwd()
 # jlfile = jldopen("data/nearly_local.jld2", "a+")
