@@ -7,7 +7,7 @@ import Distributions: Uniform
 Random.seed!(10001)
 
 # number_of_states
-number_of_states = 15
+number_of_states = 8
 # simulate a continuous time markov process
 T = ou_transition_matrix(number_of_states - 1)
 # T = uniform_phase(4)
@@ -35,7 +35,7 @@ function next_state(current_state_index::Int, cT)
     return i
 end
 
-M = 1000000
+M = 100000
 markov_chain = zeros(Int, M)
 markov_chain[1] = 4
 for i = 2:M
@@ -53,14 +53,8 @@ end
 normalization = sum(constructed_transition_probability, dims=1)
 constructed_transition_probability = constructed_transition_probability ./ normalization
 
-#=
-using GLMakie
-fig2 = scatter(markov_chain)
-fig = hist(markov_chain)
-=#
-
 # dynamic container for holding times
-holding_times = [[] for n in 1:number_of_states]
+holding_times = [[] for n in 1:number_of_states] 
 # dynamic container for states
 state_list = []
 
@@ -82,8 +76,6 @@ end
 
 # construct transition matrix from state list 
 constructed_T = zeros(number_of_states, number_of_states)
-normalization = sum(constructed_T, dims=1)
-normalized_T = constructed_T ./ normalization
 
 # first count how often state=i transitions to state=j 
 # the current state corresponds to a column of the matrix 
