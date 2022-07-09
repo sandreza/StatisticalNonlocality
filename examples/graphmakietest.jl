@@ -16,7 +16,7 @@ ax_Q = Axis(fig[1, 2]; title="Transition Rate", titlesize=30)
 
 dt_slider = Slider(fig[2, 1:2], range=0:0.01:2, startvalue=0)
 dt = dt_slider.value
-Q = ou_transition_matrix(4)
+# Q = ou_transition_matrix(4)
 # Q = uniform_phase(4)
 T = @lift exp(Q * $dt)
 
@@ -46,7 +46,7 @@ autolimits!(ax)
 hidedecorations!(ax)
 
 p_Q = graphplot!(ax_Q, g_Q, edge_color=edge_color_Q, edge_width=edge_width_Q,
-    arrow_size=arrow_size_Q, node_size=node_size, edge_labels_Q,
+    arrow_size=arrow_size_Q, node_size=node_size, 
     nlabels=node_labels_Q, nlabels_textsize=50.0)
 
 offsets = 0.15 * (p_Q[:node_pos][] .- p_Q[:node_pos][][1])
@@ -56,4 +56,3 @@ autolimits!(ax_Q)
 
 hidedecorations!(ax_Q)
 display(fig)
-
