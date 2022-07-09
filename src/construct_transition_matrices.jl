@@ -4,9 +4,9 @@ function construct_states(state, snapshots, distance; distance_threshold = nothi
     push!(states, state[:, 1])
     push!(state_counts, 1)
     push!(current_state, 1)
-    D = [distance(state[:, i], state[:, j]) for i in 1:snapshots, j in 1:snapshots]
-    minimal_state_temporal_distance = maximum([D[i, i+1] for i in 1:snapshots-1])
+    
     if isnothing(distance_threshold)
+        minimal_state_temporal_distance = maximum([distance(state[:, i], state[:, i+1]) for i in 1:snapshots-1])
         distance_threshold = minimal_state_temporal_distance
     end
 
