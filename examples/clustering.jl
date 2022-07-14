@@ -22,7 +22,7 @@ function coarse_grain_operator(identified_states)
     return operator
 end
 
-identified_states = [[1, 2], [3, 4], [ 5, 6]]
+identified_states = [[1, 2, 3], [4, 5, 6]]
 tmp = []
 for states in identified_states
     tmp = [states..., tmp...]
@@ -35,7 +35,8 @@ for i in sdif
 end
 
 P = coarse_grain_operator(fixed_up)
-Vr = (P * V6)[:, end-length(fixed_up)+1:end]
-Qr = Vr * Diagonal(Λ6[end-length(fixed_up) + 1:end]) * inv(Vr)
+Vr = (P*V6)[:, end-length(fixed_up)+1:end]
+Qr = Vr * Diagonal(Λ6[end-length(fixed_up)+1:end]) * inv(Vr)
 
-Q̂ = P * M6 * pinv(P)
+P⁺ = (P ./ sum(P, dims=2))' # Moore-Penrose pseudoinverse
+Q̂ = P * M6 * P⁺
