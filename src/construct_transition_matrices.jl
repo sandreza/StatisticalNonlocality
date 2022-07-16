@@ -24,8 +24,6 @@ function construct_states(state, snapshots, distance; distance_threshold = nothi
     return states, current_state
 end
 
-
-
 function transition_rate_matrix(markov_chain, number_of_states; γ=1)
     # dynamic container for holding times
     holding_times = [[] for n in 1:number_of_states]

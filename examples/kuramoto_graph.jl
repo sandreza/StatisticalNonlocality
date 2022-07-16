@@ -49,18 +49,18 @@ if snapshots < 1000
 end
 ##
 if snapshots < 10000
-fig = Figure()
-ax1 = Axis(fig[1, 1]; title="Total")
-heatmap!(ax1, ũ, colormap=:balance, colorrange=(-3, 3))
-axs = []
-for i in eachindex(F)
-    push!(axs, Axis(fig[1, i+1]; title="Group " * string(i)))
-end
+    fig = Figure()
+    ax1 = Axis(fig[1, 1]; title="Total")
+    heatmap!(ax1, ũ, colormap=:balance, colorrange=(-3, 3))
+    axs = []
+    for i in eachindex(F)
+        push!(axs, Axis(fig[1, i+1]; title="Group " * string(i)))
+    end
 
-for (i, ax) in enumerate(axs)
-    heatmap!(ax, ũ[:, F[i]], colormap=:balance, colorrange=(-3, 3))
-end
-display(fig)
+    for (i, ax) in enumerate(axs)
+        heatmap!(ax, ũ[:, F[i]], colormap=:balance, colorrange=(-3, 3))
+    end
+    display(fig)
 end
 ##
 state = ũ
@@ -71,13 +71,13 @@ push!(states, state[:, 1])
 push!(state_counts, 1)
 push!(current_state, 1)
 A = (I - 0.1 * Δ)
-distance(x, y) = norm(x-y, 2)
+distance(x, y) = norm(x - y, 2)
 # distance(x, y) = 0 * norm(x-y, 2) + 0.3 * norm( abs.(fft(x)) - abs.(fft(y)), 2)
 # D = [distance(state[:, i], state[:, j]) for i in 1:snapshots, j in 1:snapshots]
 temporal_distance = [distance(state[:, i], state[:, i+1]) for i in 1:snapshots-1]
 minimal_state_temporal_distance = maximum(temporal_distance) # minimal connectivity in time
 random_temporal_distance = mean([distance(state[:, i], state[:, rand(1:snapshots)]) for i in 1:snapshots-1]) # minimal connectivity in time
-distance_threshold = 2 * minimal_state_temporal_distance + 0.0 * (random_temporal_distance - minimal_state_temporal_distance)
+distance_threshold = 2.0 * minimal_state_temporal_distance + 0.0 * (random_temporal_distance - minimal_state_temporal_distance)
 println("starting simulation")
 tic = time()
 newtic = time()
@@ -97,7 +97,9 @@ for i in 2:snapshots
         global newtic = time()
     end
 end
+println("There are currently ", length(states), " states")
 println("time of for the simulation is ", time() - tic, " seconds")
+
 
 ##
 # for a set number of states
@@ -117,13 +119,21 @@ for i in 1:snapshots
 end
 =#
 ##
-num_states = 30
+num_states = 200
 kmr = kmeans(ũ, num_states)
 current_state = kmr.assignments
 km_current_state = kmr.assignments
 states = [kmr.centers[:, i] for i in 1:num_states]
 
 ##
+state_norms = norm.(states)
+state_norms_sorted = sortperm(state_norms)
+energy_permutation = zeros(length(states), length(states))
+for i in 1:length(states)
+    energy_permutation[i, state_norms_sorted[i]] = 1.0
+end
+##
+
 count_matrix = zeros(length(states), length(states))
 for i in 1:snapshots-1
     count_matrix[current_state[i+1], current_state[i]] += 1
@@ -132,9 +142,11 @@ perron_frobenius = count_matrix ./ sum(count_matrix, dims=1)
 Q = transition_rate_matrix(current_state, length(states); γ=1)
 if length(states) < 2000
     percent_error = norm(exp(Q) - perron_frobenius) / (norm(perron_frobenius) + norm(exp(Q))) * 2 * 100
-    fig, _, _  = scatter(reverse(abs.(eigvals(Q))))
+    fig, _, _ = scatter(reverse(abs.(eigvals(Q))))
     display(fig)
 end
+
+
 F = []
 for jj in 1:length(states)
     member_in_time = [i for (i, s) in enumerate(current_state) if s == jj]
@@ -142,6 +154,38 @@ for jj in 1:length(states)
 end
 println("The minimum number of states in a box is ", minimum(length.(F)))
 ##
+reverse_sort = sortperm(state_norms_sorted)
+Fsorted = F[state_norms_sorted]
+perron_frobenius_sorted = energy_permutation * perron_frobenius * energy_permutation'
+Qsorted = energy_permutation * Q * energy_permutation'
+checkit = norm(Diagonal(Qsorted).diag[reverse_sort] - Diagonal(Q).diag)
+# energy_sorted_states[state_norms_sorted[1]] ≂̸ states[1]
+# but rather energy_sorted_states[reverse_sort[1]] = states[1] 
+# energy_sorted_states[1] = states[state_norms_sorted[1]] 
+# This says "state state_norms_sorted[1] gets mapped to energy sorted state 1"
+# energy_permutation * norm.(states) = sorted energies, thing on left is out of order 
+# 
+# sort states by energy 
+energy_sorted_states = states[state_norms_sorted]
+# reverse sort here since we want to find indices to plug into the energy_sorted states
+sorted_states = [reverse_sort[cs] for cs in current_state]
+# which "energy sorted states" corresponds to which state
+# that is to say states = energy_sorted_states[reverse_sort] 
+energy_line = [norm(energy_sorted_states[ss]) for ss in sorted_states]
+energy_line_check = [norm(states[s]) for s in current_state]
+# cluster by energy quartiles?
+energy_ordered = true
+if energy_ordered == true
+    states = copy(energy_sorted_states)
+    F = copy(Fsorted)
+    Q = copy(Qsorted)
+    perron_frobenius = copy(perron_frobenius_sorted)
+    current_state = copy(sorted_states)
+end
+
+
+##
+
 lin_to_c(i; m=8) = ((i - 1) % m + 1, (i - 1) ÷ m + 1)
 reshape(collect(1:20), (4, 5))
 if length(states) < 80
@@ -207,7 +251,7 @@ time_index = time_slider.value
 
 makie_state = @lift(ũ[:, $time_index])
 makie_state2 = @lift(states[current_state[$time_index]])
-lines!(ax1, makie_state, color=:blue)
+lines!(ax1, makie_state, color=:blue, linewidth=10)
 lines!(ax1, makie_state2, color=:red)
 lines!(ax2, makie_state2, color=:red)
 ylims!(ax1, (-3, 3))
