@@ -3,7 +3,7 @@ import StatisticalNonlocality: leicht_newman, discrete_laplacian
 
 filename = "/Users/andresouza/Desktop/Repositories/StatisticalNonlocality/" * "ks_medium_res3.h5"
 fid = h5open(filename, "r")
-u = read(fid["u"])[:, 300000:4:end]
+u = read(fid["u"])[:, 300000:2:end]
 
 norm(u[:, 1] - u[:, 2], Inf)
 
@@ -77,7 +77,7 @@ distance(x, y) = norm(x - y, 2)
 temporal_distance = [distance(state[:, i], state[:, i+1]) for i in 1:snapshots-1]
 minimal_state_temporal_distance = maximum(temporal_distance) # minimal connectivity in time
 random_temporal_distance = mean([distance(state[:, i], state[:, rand(1:snapshots)]) for i in 1:snapshots-1]) # minimal connectivity in time
-distance_threshold = 2.0 * minimal_state_temporal_distance + 0.0 * (random_temporal_distance - minimal_state_temporal_distance)
+distance_threshold = 4 * minimal_state_temporal_distance + 0.0 * (random_temporal_distance - minimal_state_temporal_distance)
 println("starting simulation")
 tic = time()
 newtic = time()
@@ -119,7 +119,7 @@ for i in 1:snapshots
 end
 =#
 ##
-num_states = 200
+num_states = 1000
 kmr = kmeans(ũ, num_states)
 current_state = kmr.assignments
 km_current_state = kmr.assignments
@@ -174,7 +174,9 @@ sorted_states = [reverse_sort[cs] for cs in current_state]
 energy_line = [norm(energy_sorted_states[ss]) for ss in sorted_states]
 energy_line_check = [norm(states[s]) for s in current_state]
 # cluster by energy quartiles?
-energy_ordered = true
+# check on accuracy. Continuity of all soboleve norms demands that an ordered 
+# thing should transfer to the thing in between. Gives an idea of the level of accuracy
+energy_ordered = false
 if energy_ordered == true
     states = copy(energy_sorted_states)
     F = copy(Fsorted)
@@ -182,8 +184,19 @@ if energy_ordered == true
     perron_frobenius = copy(perron_frobenius_sorted)
     current_state = copy(sorted_states)
 end
-
-
+energy_states = norm.(energy_sorted_states)
+MM = 10
+energy_partitions = [quantile(energy_states, i / MM) for i in 1:MM-1] # bad way to do it since not weigted by probability
+starting_set = copy(energy_states)
+starting_indices = 1:length(energy_states)
+energy_partition_indices = []
+for energy in energy_partitions
+    set = starting_set .< energy
+    push!(energy_partition_indices, starting_indices[set])
+    starting_set = setdiff(starting_set, starting_set[set])
+    starting_indices = setdiff(starting_indices, starting_indices[set])
+end
+push!(energy_partition_indices, starting_indices)
 ##
 
 lin_to_c(i; m=8) = ((i - 1) % m + 1, (i - 1) ÷ m + 1)
@@ -205,15 +218,19 @@ if length(states) < 80
 end
 
 ##
+start_value = 1
+end_value = 10000
+
 C = perron_frobenius .> 0.0
-newF = leicht_newman(C)
+# newF = leicht_newman(C)
+newF = energy_partition_indices
 newclusters = [vcat(F[f]...) for f in newF]
 
 lin_to_c(i; m=8) = ((i - 1) % m + 1, (i - 1) ÷ m + 1)
 
 fig = Figure()
 ax1 = Axis(fig[1, 1]; title="Total")
-heatmap!(ax1, ũ, colormap=:balance, colorrange=(-3, 3))
+heatmap!(ax1, ũ[:, start_value:end_value], colormap=:balance, colorrange=(-3, 3))
 axs = []
 for i in eachindex(newclusters)
     jj, ii = lin_to_c(i)
@@ -240,7 +257,7 @@ C̃ = P * C * P'
 =#
 ##
 start_value = 1
-end_value = 10000
+end_value = 4000
 fig = Figure(resolution=(1832, 1448))
 ax1 = Axis(fig[2, 1:3])
 ax2 = Axis(fig[2, 4:6])

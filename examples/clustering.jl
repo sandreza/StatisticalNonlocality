@@ -35,7 +35,7 @@ for i in sdif
 end
 
 P = coarse_grain_operator(fixed_up)
-Vr = (P*V6)[:, end-length(fixed_up)+1:end]
+Vr = (P * V6)[:, end-length(fixed_up)+1:end]
 Qr = Vr * Diagonal(Λ6[end-length(fixed_up)+1:end]) * inv(Vr)
 
 P⁺ = (P ./ sum(P, dims=2))' # Moore-Penrose pseudoinverse, pinv(P) also works
@@ -43,3 +43,8 @@ P⁺ = (P ./ sum(P, dims=2))' # Moore-Penrose pseudoinverse, pinv(P) also works
 Q̂ = P * M6 * P⁺
 𝒫¹ = exp(P * M6 * P⁺)
 𝒫² = P * exp(M6) * P⁺ 
+
+#=
+P = coarse_grain_operator(energy_partition_indices)
+Q̂ = P * Q * pinv(P)
+=#

@@ -14,7 +14,7 @@ fig = Figure(resolution=(1506, 1076))
 ax = Axis(fig[1, 1]; title="Transition Probability", titlesize=30)
 ax_Q = Axis(fig[1, 2]; title="Transition Rate", titlesize=30)
 
-dt_slider = Slider(fig[2, 1:2], range=0:0.01:2, startvalue=0)
+dt_slider = Slider(fig[2, 1:2], range=0:0.01:10, startvalue=0)
 dt = dt_slider.value
 # Q = ou_transition_matrix(4)
 # Q = uniform_phase(4)
