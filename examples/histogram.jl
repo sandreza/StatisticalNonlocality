@@ -29,10 +29,15 @@ end
 function histogram2(
     array;
     bins=minimum([100, length(array)]),
-    normalization=:uniform
+    normalization=:uniform,
+    custom_range = false,
 )
     tmp = zeros(bins)
-    down, up = extrema(array)
+    if custom_range isa Tuple
+        down, up = custom_range
+    else
+        down, up = extrema(array)
+    end
     down, up = down == up ? (down - 1, up + 1) : (down, up) # edge case
     bucket = collect(range(down, up, length=bins + 1))
     if normalization == :uniform
@@ -50,15 +55,16 @@ function histogram2(
     return (bucket[2:end] + bucket[1:(end-1)]) .* 0.5, tmp
 end
 ##
-reaction_coordinate(x) = sin(x[1]) / (1 + x[8]^2)
-
 ll, vv = eigen(Q)
 p = real.(vv[:, end] ./ sum(vv[:, end]))
+println("The entropy is ", sum(-p .* log.(p) / log(length(states)))) # uniform distribution for a given N is always assigned to be one
+##
+reaction_coordinate(x) = distance(x, states[1])
 markov = [reaction_coordinate(state) for state in states]
-timeseries = [reaction_coordinate(u[:, i]) for i in 1:size(u)[2]]
-xs_m, ys_m = histogram2(markov, normalization=p, bins=20)
-xs_t, ys_t = histogram2(timeseries, bins=20)
-fig = Figure() 
+timeseries = [reaction_coordinate(u[:, i]) for i in snapshots:size(u)[2]]
+xs_m, ys_m = histogram2(markov, normalization=p, bins=20, custom_range=extrema(timeseries))
+xs_t, ys_t = histogram2(timeseries, bins=20, custom_range=extrema(timeseries))
+fig = Figure()
 ax1 = Axis(fig[1, 1]; title="Ensemble Statistics")
 ax2 = Axis(fig[1, 2]; title="Temporal Statistics")
 barplot!(ax1, xs_m, ys_m, color=:red)
@@ -83,5 +89,4 @@ println("The temporal mean is ", temporal_mean)
 println("The ensemble variance is ", ensemble_variance)
 println("The temporal variance is ", temporal_variance)
 println("The absolute error between the ensemble and temporal means is ", abs(ensemble_mean - temporal_mean))
-println("keep in mind that this should be zero")
 println("The relative error between the ensemble and temporal variances are ", 100 * abs(ensemble_variance - temporal_variance) / temporal_variance, " percent")
