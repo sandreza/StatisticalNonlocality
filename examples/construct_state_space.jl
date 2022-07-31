@@ -12,7 +12,7 @@ number_of_states = 8
 T = ou_transition_matrix(number_of_states - 1)
 # T = uniform_phase(4)
 
-γ = 0.01 # γ is basically the dt of the system let's say
+γ = 0.1 # γ is basically the dt of the system let's say
 eT = exp(γ * T) # get the transition probabilities
 # each column gives the transition probability
 # column i, means, given that I am in state i, each row j gives the probability to transition to state j
@@ -35,7 +35,7 @@ function next_state(current_state_index::Int, cT)
     return i
 end
 
-M = 100000
+M = 1000000
 markov_chain = zeros(Int, M)
 markov_chain[1] = 4
 for i = 2:M
@@ -98,6 +98,16 @@ for i in 1:number_of_states
 end
 empirical_T = normalized_T
 
+# illustrative example of fooling oneself
+# also shows the danger of considering ensemble versus time-averages
+count_matrix = zeros(number_of_states, number_of_states)
+skip = floor(Int, 6 / γ)
+reduced_state_list = copy(markov_chain[1:skip:end])
+for i in 1:length(reduced_state_list)-1
+    count_matrix[reduced_state_list[i+1], reduced_state_list[i]] += 1
+end
+lowrez_transition_probability = count_matrix ./ sum(count_matrix, dims=1)
+
 empirical_transition_probability = exp(empirical_T * γ)
 empirical_T_2 = log(constructed_transition_probability) / γ
 exact_transition_probability = exp(T * γ)
@@ -116,4 +126,8 @@ println("For the second way of constructing the transition probability")
 println("The error in constructed the matrix is ", empirical_error_2)
 println("The relative error in holding scale is ", empirical_holding_scale_error_2)
 println("This is independent of the choice of timestep, but may yield wonky transition matrices after taking the log")
+
+println("Note that if one does not resolve the slowest decorrelation scale in the process then one gets the following eigenvalue ")
+println(eigvals(lowrez_transition_probability)[end-1])
+println("as opposed to ", eigvals(exact_transition_probability)[end-1]^skip)
 
