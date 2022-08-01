@@ -30,7 +30,7 @@ function histogram2(
     array;
     bins=minimum([100, length(array)]),
     normalization=:uniform,
-    custom_range = false,
+    custom_range=false
 )
     tmp = zeros(bins)
     if custom_range isa Tuple
@@ -57,9 +57,11 @@ end
 ##
 ll, vv = eigen(Q)
 p = real.(vv[:, end] ./ sum(vv[:, end]))
-println("The entropy is ", sum(-p .* log.(p) / log(length(states)))) # uniform distribution for a given N is always assigned to be one
+entropy = sum(-p .* log.(p) / log(length(states)))
+println("The entropy is ", entropy) # uniform distribution for a given N is always assigned to be one
+ll[end-1]
 ##
-reaction_coordinate(x) = distance(x, states[1])
+reaction_coordinate(u) = argmin([distance(u, s) for s in energy_partitioned_states]) # mean(u .^2)
 markov = [reaction_coordinate(state) for state in states]
 timeseries = [reaction_coordinate(u[:, i]) for i in snapshots:size(u)[2]]
 xs_m, ys_m = histogram2(markov, normalization=p, bins=20, custom_range=extrema(timeseries))
@@ -86,7 +88,9 @@ ensemble_variance = sum(p .* markov .^ 2) - sum(p .* markov)^2
 temporal_variance = mean(timeseries .^ 2) - mean(timeseries)^2
 println("The ensemble mean is ", ensemble_mean)
 println("The temporal mean is ", temporal_mean)
+println("The null hypothesis is ", mean(markov))
 println("The ensemble variance is ", ensemble_variance)
 println("The temporal variance is ", temporal_variance)
+println("The null hypothesis is ", var(markov))
 println("The absolute error between the ensemble and temporal means is ", abs(ensemble_mean - temporal_mean))
 println("The relative error between the ensemble and temporal variances are ", 100 * abs(ensemble_variance - temporal_variance) / temporal_variance, " percent")

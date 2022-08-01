@@ -64,9 +64,12 @@ norm(perron_frobenius4^2 - perron_frobenius8) / norm(perron_frobenius8)
 norm(perron_frobenius8^2 - perron_frobenius16) / norm(perron_frobenius16)
 
 ##
-ctimeseries = [mean(state[:, i] .^2) for i in 1:size(state, 2)]
+function partition_coordinate(state)
+    return sqrt(mean(state .^2))
+end
+ctimeseries = [partition_coordinate(state[:,i]) for i in 1:size(state, 2)]
 plot(ctimeseries[1:1000])
-estates = range(extrema(ctimeseries)..., length=5)
+estates = range(extrema(ctimeseries)..., length=20)
 
 current_state = Int64[]
 global newtic = time()
@@ -93,6 +96,9 @@ Qe = transition_rate_matrix(current_state, length(estates); γ=1);
 ΛPFe = eigvals(perron_frobeniuse)
 log(ΛPFe[end-1])
 ΛQe[end-1]
+checkfiz = sum(sum(Qe .> 0, dims=1)[:] .<= 2) == length(estates)
+
+println("The check for physicality is ", checkfiz)
 ##
 totes = 1000
 u²_markov = zeros(totes)
@@ -132,7 +138,7 @@ for i in 1:length(estates)
     if size(micro_state)[2] > 10000
         micro_state = micro_state[:, 1:10:end]
     end
-    num_states = maximum([ceil(Int, length(micro_state[1, :]) / 100), 4])
+    num_states = maximum([ceil(Int, length(micro_state[1, :]) / 1000), 4])
     println("The number of states is ", num_states)
     kmr = kmeans(micro_state, num_states)
     km_current_state = kmr.assignments
@@ -148,7 +154,7 @@ snapshot_estate = zeros(length(energy_partitioned_states[1]), length(energy_part
 for i in 1:snapshots
     candidate_state = state[:, i]
     # macro state
-    ecandidate_state = mean(candidate_state .^ 2)
+    ecandidate_state = partition_coordinate(candidate_state) 
     eindex = energy_partitioned_indices[argmin([distance(ecandidate_state, s) for s in estates])]
     # micro state
     distances = [distance(candidate_state, s) for s in energy_partitioned_states[eindex]]
@@ -180,7 +186,7 @@ entropy = sum(-p .* log.(p) / log(length(energy_partitioned_states)))
 println("The entropy is ", entropy) # uniform distribution for a given N is always assigned to be one
 ll[end-1]
 ##
-reaction_coordinate(x) = maximum(x)
+reaction_coordinate(x) = argmin([distance(x, s) for s in energy_partitioned_states])
 markov = [reaction_coordinate(snapshot_estate[:, i]) for i in 1:length(energy_partitioned_states)]
 timeseries = [reaction_coordinate(u[:, i]) for i in snapshots:size(u)[2]]
 xs_m, ys_m = histogram2(markov, normalization=p, bins=20, custom_range=extrema(timeseries))
@@ -220,12 +226,13 @@ V⁻¹ = inv(V)
 p = real.(V[:, end] ./ sum(V[:, end], dims=1))
 Λ[end-1]
 ##
-totes = floor(Int64, 1000 / skip)
+totes = floor(Int64, 400 / skip)
 u²_timeseries = zeros(totes)
 for s in 0:totes-1
     u²_timeseries[s+1] = mean(timeseries[s+1:end] .* timeseries[1:end-s])
 end
 u²_timeseries .-= mean(timeseries)^2
+u²_timeseries .*= 1 / u²_timeseries[1]
 ##
 u²_markov = zeros(totes)
 dt = 1.0
@@ -238,8 +245,12 @@ for i in 0:totes-1
     accumulate += sum(val' * Pτ * (p .* val))
     u²_markov[i+1] = accumulate
     # Pτ *= perron_frobenius
+    if i % 10 == 0
+        println("On iteration ", i)
+    end
 end
 u²_markov .= u²_markov .- sum(val .* p)^2
+u²_markov .*= 1 / u²_markov[1]
 ##
 fig = Figure()
 ax1 = Axis(fig[1, 1]; title="Ensemble Statistics")
