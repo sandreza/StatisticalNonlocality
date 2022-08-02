@@ -5,11 +5,22 @@ p = real.(V[:, end] ./ sum(V[:, end], dims=1))
 Λ[end-1]
 perron_frobenius = exp(Q)
 ##
+# GPR 
+D = [distance(t, s) for s in states, t in states]
+scale = 5 / maximum(D)^2
+K = exp.(-scale .* D .^ 2 ) # exponential kernel
+k = real.(K \ V⁻¹[end-1, :])
+function gpr(state; k=k, states = states, scale = scale)
+    d = [exp(-scale * distance(state, s)^2) for s in states]
+    return k' * d
+end
+norm([gpr(s) for s in states] - real(V⁻¹[end-1, :]))
+##
 function reaction_coordinate(u)
     # (mean(u .^2) .> 4) && (mean(u .^2) .< 6)
-    cluster = argmin([distance(u, s) for s in energy_partitioned_states])
+    # cluster = argmin([distance(u, s) for s in states])
     # coarse_state = states[cluster]
-    return real(V⁻¹[end-1, cluster])
+    return gpr(u) # real(V⁻¹[end-1, cluster])
 end
 ##
 totes = floor(Int64, 200 / skip)
@@ -19,6 +30,7 @@ for s in 0:totes-1
     u²_timeseries[s+1] = mean(ctimeseries[s+1:end] .* ctimeseries[1:end-s])
 end
 u²_timeseries .-= mean(ctimeseries)^2
+u²_timeseries .*= 1 / u²_timeseries[1]
 ##
 u²_markov = zeros(totes)
 dt = 1.0
@@ -37,6 +49,7 @@ for i in 0:totes-1
     end
 end
 u²_markov .= u²_markov .- sum(val .* p)^2
+u²_markov .*= 1.0 / u²_markov[1]
 ##
 fig = Figure()
 ax1 = Axis(fig[1, 1]; title="Ensemble Statistics")
