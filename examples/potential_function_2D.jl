@@ -96,36 +96,16 @@ mean(x)
 
 ##
 # 6 wells so 6 partitions
-c1 = real.(V[:, end] * sign(V[1, end]))
-cp1 = real.(iV[end, :] * sign(V[1, end]))
-c2 = real.(V[:, end-1])
-cp2 = real.(iV[end-1, :])
-c3 = real.(V[:, end-2])
-cp3 = real.(iV[end-2, :])
-fig = Figure()
-ax11 = Axis(fig[1, 1])
-ax12 = Axis(fig[1, 2])
-ax13 = Axis(fig[1, 3])
-ax21 = Axis(fig[2, 1])
-ax22 = Axis(fig[2, 2])
-ax23 = Axis(fig[2, 3])
-heatmap!(ax11, reshape(c1, (xL, yL)), interpolate=true, colormap=:bone)
-heatmap!(ax12, reshape(c2, (xL, yL)), interpolate=true, colormap=:bone)
-heatmap!(ax13, reshape(c3, (xL, yL)), interpolate=true, colormap=:bone)
-heatmap!(ax21, reshape(cp1, (xL, yL)), interpolate=true, colormap=:bone)
-heatmap!(ax22, reshape(cp2, (xL, yL)), interpolate=true, colormap=:bone)
-heatmap!(ax23, reshape(cp3, (xL, yL)), interpolate=true, colormap=:bone)
-display(fig)
-
-##
 fig = Figure()
 cs = [real.(V[:, end-i]) for i in 0:5]
 cps = [real.(iV[end-i, :]) for i in 0:5]
 topax = [Axis(fig[1, i]) for i in 1:6]
 bottomax = [Axis(fig[2, i]) for i in 1:6]
-
+# choose a colormap so that white is zero
 for i in 1:6 
-    heatmap!(topax[i], reshape(cs[i], (xL, yL)), interpolate=true, colormap=:bone)
-    heatmap!(bottomax[i], reshape(cps[i], (xL, yL)), interpolate=true, colormap=:bone)
+    mcs = maximum(abs.(cs[i]))
+    heatmap!(topax[i], reshape(cs[i], (xL, yL)), interpolate=true, colormap=:balance, colorrange = [-mcs, mcs])
+    mcps = maximum(abs.(cps[i]))
+    heatmap!(bottomax[i], reshape(cps[i], (xL, yL)), interpolate=true, colormap=:balance, colorrange = (-mcps, mcps))
 end
 display(fig)

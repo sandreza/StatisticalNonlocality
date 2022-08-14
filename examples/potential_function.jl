@@ -95,8 +95,7 @@ scatter!(ax3, c3)
 scatter!(ax3, cp3)
 display(fig)
 # lines(c1 - 1.2 * c3 + 0.12*c2)
-##
-# model reaction coordinate
+##1# model reaction coordinate
 
 g(a, b) = norm((real.(iV[end-1, :]) - (a * snapshots .+ b)))
 as = range(-1, 1, length=101)
