@@ -4,7 +4,7 @@ import StatisticalNonlocality: transition_rate_matrix
 function U(v⃗)
     x = v⃗[1]
     y = v⃗[2]
-    return ((x - 1)^2 + 0.01) * ((x + 1)^2 + 0.0) * (x^2 + 0.02) + ((y-1)^2)*(y+1)^2
+    return ((x - 1)^2 + 0.01) * ((x + 1)^2 + 0.0) * (x^2 + 0.02) + ((y - 1)^2) * (y + 1)^2
 end
 
 # better to use reverse mode than forward mode here (for some reason)
@@ -83,8 +83,8 @@ entropy = sum(-p .* log.(p) / log(length(snapshots)))
 p_exact = @. exp(-2U(snapshots) / (ϵ^2))
 p_exact = p_exact / sum(p_exact)
 fig = Figure()
-ax1 = Axis(fig[1,1])
-ax2 = Axis(fig[1,2])
+ax1 = Axis(fig[1, 1])
+ax2 = Axis(fig[1, 2])
 heatmap!(ax1, reshape(p_exact, (xL, yL)), interpolate=true, colormap=:bone)
 heatmap!(ax2, reshape(p, (xL, yL)), interpolate=true, colormap=:bone)
 ##
@@ -102,10 +102,27 @@ cps = [real.(iV[end-i, :]) for i in 0:5]
 topax = [Axis(fig[1, i]) for i in 1:6]
 bottomax = [Axis(fig[2, i]) for i in 1:6]
 # choose a colormap so that white is zero
-for i in 1:6 
+for i in 1:6
     mcs = maximum(abs.(cs[i]))
-    heatmap!(topax[i], reshape(cs[i], (xL, yL)), interpolate=true, colormap=:balance, colorrange = [-mcs, mcs])
+    heatmap!(topax[i], reshape(cs[i], (xL, yL)), interpolate=true, colormap=:balance, colorrange=[-mcs, mcs])
     mcps = maximum(abs.(cps[i]))
-    heatmap!(bottomax[i], reshape(cps[i], (xL, yL)), interpolate=true, colormap=:balance, colorrange = (-mcps, mcps))
+    heatmap!(bottomax[i], reshape(cps[i], (xL, yL)), interpolate=true, colormap=:balance, colorrange=(-mcps, mcps))
 end
+display(fig)
+
+##
+# check reaction coordinate 
+rtimeseries1 = [real(iV[end-1, state]) for state in current_state]
+rtimeseries2 = [real(iV[end-3, state]) for state in current_state]
+
+fig = Figure()
+ax11 = Axis(fig[1,1])
+ax21 = Axis(fig[2,1])
+ax12 = Axis(fig[1,2])
+ax22 = Axis(fig[2,2])
+scatter!(ax11, xc1[1:1:25000], markersize=5)
+scatter!(ax21, xc2[1:1:25000], markersize=5)
+lines!(ax12, -rtimeseries1[1:1:25000], color=:red, linewidth=3)
+lines!(ax22, -rtimeseries2[1:1:25000], color=:red, linewidth=3)
+
 display(fig)
