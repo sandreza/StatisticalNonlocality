@@ -10,6 +10,7 @@
 *.jld2*
 *.h5*
 *.dat*
+*.mp4*
 
 # DS store 
 *.DS*
