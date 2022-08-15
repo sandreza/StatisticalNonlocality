@@ -1,31 +1,3 @@
-
-"""
-histogram(array; bins = 100)
-# Description
-return arrays for plotting histogram
-"""
-function histogram(
-    array;
-    bins=minimum([100, length(array)]),
-    normalize=true
-)
-    tmp = zeros(bins)
-    down, up = extrema(array)
-    down, up = down == up ? (down - 1, up + 1) : (down, up) # edge case
-    bucket = collect(range(down, up, length=bins + 1))
-    normalization = normalize ? length(array) : 1
-    for i in eachindex(array)
-        # normalize then multiply by bins
-        val = (array[i] - down) / (up - down) * bins
-        ind = ceil(Int, val)
-        # handle edge cases
-        ind = maximum([ind, 1])
-        ind = minimum([ind, bins])
-        tmp[ind] += 1 / normalization
-    end
-    return (bucket[2:end] + bucket[1:(end-1)]) .* 0.5, tmp
-end
-
 function histogram2(
     array;
     bins=minimum([100, length(array)]),
@@ -61,9 +33,9 @@ entropy = sum(-p .* log.(p) / log(length(states)))
 println("The entropy is ", entropy) # uniform distribution for a given N is always assigned to be one
 ll[end-1]
 ##
-reaction_coordinate(u) = argmin([distance(u, s) for s in energy_partitioned_states]) # mean(u .^2)
+reaction_coordinate(u) =  mean(u .^2)
 markov = [reaction_coordinate(state) for state in states]
-timeseries = [reaction_coordinate(u[:, i]) for i in snapshots:size(u)[2]]
+timeseries = [reaction_coordinate(u[:, i]) for i in snapshots+1:2*snapshots]
 xs_m, ys_m = histogram2(markov, normalization=p, bins=20, custom_range=extrema(timeseries))
 xs_t, ys_t = histogram2(timeseries, bins=20, custom_range=extrema(timeseries))
 fig = Figure()
