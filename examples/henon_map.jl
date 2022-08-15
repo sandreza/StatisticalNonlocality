@@ -122,7 +122,7 @@ display(fig)
 # first largest eigenvector without an imaginary component, but still oscillatory  (probably)
 index1 = argmax(imag.(Λ) .== 0.0)
 # first largest eigenvector without an imaginary component, but not oscillatory (hopefully)
-index2 = length(Λ) - argmax(reverse(imag.(Λ) .== 0.0)[2:end]) 
+index2 = length(Λ) - argmax(reverse(imag.(Λ) .== 0.0)[2:end])
 
 fig = Figure()
 ax1 = Axis(fig[1, 1])
@@ -144,3 +144,23 @@ heatmap!(ax2, gpr_field2, colorrange=colorrange, colormap=:balance, interpolate=
 display(fig)
 
 ##
+rowsum = sum(perron_frobenius, dims=2)[:]
+colprob = [maximum(perron_frobenius[:, i]) for i in 1:sL]
+fig = Figure()
+ax1 = Axis(fig[1, 1])
+ax2 = Axis(fig[1, 2])
+
+field = rowsum
+predictor = 𝒦 \ (field) # visualize second largest eigenvector
+ufield = quantile(abs.(field), 0.5)
+colorrange = (0, ufield)
+gpr_field1 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap!(ax1, gpr_field1, colorrange=colorrange, colormap=:afmhot, interpolate=true)
+
+field = colprob
+predictor = 𝒦 \ (field) # visualize second largest eigenvector
+ufield = quantile(abs.(field), 0.5)
+colorrange = (0, ufield)
+gpr_field2 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap!(ax2, gpr_field2, colorrange=colorrange, colormap=:afmhot, interpolate=true)
+display(fig)
