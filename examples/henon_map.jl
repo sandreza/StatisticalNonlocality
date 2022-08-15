@@ -32,6 +32,7 @@ end
 ∇henon(s) = jacobian(Forward, henon, s)
 
 sᶠ = henon_fixed_points(1.4, 0.3)[1]
+Random.seed!(12345)
 sⁿ = sᶠ + 0.01 * randn(2)
 s = Vector{Float64}[]
 for i in ProgressBar(1:1000000)
@@ -52,13 +53,13 @@ if sL < 1000
     # for visualization later
     D = [norm(s1 - s2) for s1 in snapshots, s2 in snapshots]
     maxD = maximum(D - I)
-    minD = minimum(D + maxD*I)
-    𝒦 = @. exp(-1e5 * D^2/ maxD^2)
+    minD = minimum(D + maxD * I)
+    𝒦 = @. exp(-5e4 * D^2 / maxD^2)
     function gpr(x, predictor, maxD, snapshots)
         prediction = 0.0
         for i in eachindex(predictor)
             d = norm(x - snapshots[i])
-            prediction += predictor[i] * exp(-1e5 * d^2 / maxD^2)
+            prediction += predictor[i] * exp(-5e4 * d^2 / maxD^2)
         end
         return prediction
     end
@@ -92,23 +93,54 @@ var(ys)
 sum(yₘ .^ 2 .* p) - sum(yₘ .* p)^2
 ##
 predictor = 𝒦 \ p # visualize probability density p
-xvals = range(extrema(xs)..., length = 100)
-yvals = range(extrema(ys)..., length = 100)
+xvals = range(extrema(xs)..., length=100)
+yvals = range(extrema(ys)..., length=100)
 p[2] ≈ gpr(snapshots[2], predictor, maxD, snapshots) # check correctness
-gpr_prediction = [gpr([x,y], predictor, maxD, snapshots) for x in xvals, y in yvals]
-heatmap(gpr_prediction, colorrange = (0, median(p)), colormap = :bone, interpolate = true)
+gpr_prediction = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap(gpr_prediction, colorrange=(0, median(p)), colormap=:bone, interpolate=true)
 ##
 fig = Figure()
-ax1 = Axis(fig[1,1])
-ax2 = Axis(fig[1,2])
+ax1 = Axis(fig[1, 1])
+ax2 = Axis(fig[1, 2])
 
-field = real.(V[:,1])
-predictor = 𝒦 \ ( field ) # visualize second largest eigenvector
-gpr_field1 = [gpr([x,y], predictor, maxD, snapshots) for x in xvals, y in yvals]
-heatmap!(ax1, gpr_field1, colorrange = (-maximum(field), maximum(field )), colormap = :balance, interpolate = true)
+field = real.(V[:, 1])
+predictor = 𝒦 \ (field) # visualize second largest eigenvector
+ufield = quantile(abs.(field), 0.5)
+colorrange = (-ufield, ufield)
+gpr_field1 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap!(ax1, gpr_field1, colorrange=colorrange, colormap=:balance, interpolate=true)
 
-field = imag.(V[:,1])
-predictor = 𝒦 \ ( field ) # visualize second largest eigenvector
-gpr_field2 = [gpr([x,y], predictor, maxD, snapshots) for x in xvals, y in yvals]
-heatmap!(ax2, gpr_field2, colorrange = (-maximum(field), maximum(field )), colormap = :balance, interpolate = true)
+field = imag.(V[:, 1])
+predictor = 𝒦 \ (field) # visualize second largest eigenvector
+ufield = quantile(abs.(field), 0.5)
+colorrange = (-ufield, ufield)
+gpr_field2 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap!(ax2, gpr_field2, colorrange=colorrange, colormap=:balance, interpolate=true)
 display(fig)
+
+##
+# first largest eigenvector without an imaginary component, but still oscillatory  (probably)
+index1 = argmax(imag.(Λ) .== 0.0)
+# first largest eigenvector without an imaginary component, but not oscillatory (hopefully)
+index2 = length(Λ) - argmax(reverse(imag.(Λ) .== 0.0)[2:end]) 
+
+fig = Figure()
+ax1 = Axis(fig[1, 1])
+ax2 = Axis(fig[1, 2])
+
+field = real.(V[:, index1])
+predictor = 𝒦 \ (field) # visualize second largest eigenvector
+ufield = quantile(abs.(field), 0.5)
+colorrange = (-ufield, ufield)
+gpr_field1 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap!(ax1, gpr_field1, colorrange=colorrange, colormap=:balance, interpolate=true)
+
+field = real.(V[:, index2])
+predictor = 𝒦 \ (field) # visualize second largest eigenvector
+ufield = quantile(abs.(field), 0.5)
+colorrange = (-ufield, ufield)
+gpr_field2 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
+heatmap!(ax2, gpr_field2, colorrange=colorrange, colormap=:balance, interpolate=true)
+display(fig)
+
+##
