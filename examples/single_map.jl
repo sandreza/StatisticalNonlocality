@@ -1,3 +1,5 @@
+using Enzyme, Random, GLMakie, ProgressBars, Statistics, LinearAlgebra
+
 function ulam_map(xⁿ)
     return 1 - 2 * xⁿ * xⁿ
 end
