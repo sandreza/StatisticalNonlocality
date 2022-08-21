@@ -5,21 +5,24 @@ k = 1.0 # wavenumber
 κ = 1.0 # diffusivity
 λ = 1.0 # relaxation rate
 
-N = 40
+N = 40 # number of markov states 
+
+# construct markov approximation 
 Δx = 2/√N
 uₘ = [Δx * (i - N/2) for i in 0:N]
 Q = ou_transition_matrix(N)
 Λ, V = eigen(Q)
 V⁻¹ = inv(V)
 
+# define the effective diffusivity as the appropriate schur-complement
 U = V * Diagonal(uₘ) * V⁻¹
 vtop = U[end, 1:end-1]
 vbottom = U[1:end-1, end]
 vbot = im * k * U[1:end-1, 1:end-1] + Diagonal(Λ[1:end-1] .- λ .- κ * k^2)
 𝒦ₘ = -real(vtop' * (vbot \ vbottom))
 
-
 ##
+# now just simulate the OU system numerically
 
 Δt = minimum([0.1, 0.5 * (1/ (κ * k^2))])
 γ = 1.0 
@@ -46,8 +49,10 @@ cs = [s[2] for s in sc]
 
 fig = Figure()
 ax = Axis(fig[1, 1], xlabel="time")
-lines!(ax, ss, label="u")
+lines!(ax, ss[end-1000:end], color = :red, label = "sine mode")
+lines!(ax, cs[end-1000:end], color = :blue, label = "cosine mode")
 
+# compute the effective diffusivity from the simulation
 𝒦 =  -mean(u .* cs) / (k * mean(ss))
 
 ##
