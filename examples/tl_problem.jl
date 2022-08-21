@@ -1,11 +1,11 @@
 using LinearAlgebra, Random, ProgressBars, GLMakie, Statistics
 import StatisticalNonlocality: ou_transition_matrix
 
-k = 10.0 # wavenumber
+k = 1.0 # wavenumber
 κ = 1.0 # diffusivity
-λ = 0.0 # relaxation rate
+λ = 1.0 # relaxation rate
 
-N = 20
+N = 40
 Δx = 2/√N
 uₘ = [Δx * (i - N/2) for i in 0:N]
 Q = ou_transition_matrix(N)
@@ -21,7 +21,7 @@ vbot = im * k * U[1:end-1, 1:end-1] + Diagonal(Λ[1:end-1] .- λ .- κ * k^2)
 
 ##
 
-Δt = minimum([0.1, 0.1 * (1/ (κ * k^2))])
+Δt = minimum([0.1, 0.5 * (1/ (κ * k^2))])
 γ = 1.0 
 ϵ = √2
 
@@ -53,4 +53,4 @@ lines!(ax, ss, label="u")
 ##
 println("Markov estimate: ", 𝒦ₘ)
 println("Timeseries estimate: ", 𝒦)
-println("Relataive Differences: ", abs(𝒦ₘ - 𝒦) / (𝒦ₘ + 𝒦) * 2 * 100, "%")
+println("Relataive Differences: ", abs(𝒦ₘ - 𝒦) / (𝒦ₘ + 𝒦) * 2 * 100, " percent")
