@@ -20,16 +20,50 @@ function rk4(f, s, dt)
     return s + (k1 + 2 * k2 + 2 * k3 + k4) * dt / 6
 end
 
-periodic_state = Vector{Float64}[]
+# AB periodic orbit
 s = [−1.3763610682134e1, −1.9578751942452e1, 27.0]
+T = 1.5586522107162
+
+periodic_state = Vector{Float64}[]
 subdiv = 2^11
-push!(state, s)
-dt = 1.5586522107162 / subdiv
+push!(periodic_state, s)
+dt = T / subdiv
 for i in ProgressBar(1:2 * subdiv)
     s = rk4(lorenz!, s, dt)
     push!(periodic_state, s)
 end
-times = range(0, dt * 2 * subdiv, length = 2 * subdiv)
+ab_periodic_state = copy(periodic_state)
+
+# AAB periodic orbit 
+s = [−1.2595115397689e1, −1.6970525307084e1, 27.0]
+T = 2.3059072639398
+periodic_state = Vector{Float64}[]
+subdiv = 2^11
+push!(periodic_state, s)
+dt = T / subdiv
+for i in ProgressBar(1:2 * subdiv)
+    s = rk4(lorenz!, s, dt)
+    push!(periodic_state, s)
+end
+aab_periodic_state = copy(periodic_state)
+
+# ABB periodic orbit
+s = [−1.4426408025035e1, −2.1111230056994e1, 27.0]
+T = 2.3059072639398
+
+periodic_state = Vector{Float64}[]
+subdiv = 2^11
+push!(periodic_state, s)
+dt = T / subdiv
+for i in ProgressBar(1:2 * subdiv)
+    s = rk4(lorenz!, s, dt)
+    push!(periodic_state, s)
+end
+abb_periodic_state = copy(periodic_state)
+
+periodic_state = ab_periodic_state
+
+times = range(0, dt * 2 * subdiv, length = 2 * subdiv+1)
 
 pxs = [s[1] for s in periodic_state]
 pys = [s[2] for s in periodic_state]
@@ -55,9 +89,9 @@ fig = Figure()
 ax1 = Axis(fig[1,1])
 ax2 = Axis(fig[1,2])
 ax3 = Axis(fig[2,1])
-scatter!(ax1, log.(abs.(fft(xs[1:subdiv])))[1:64] ./ log(10))
-scatter!(ax2, log.(abs.(fft(ys[1:subdiv])))[1:64] ./ log(10))
-scatter!(ax3, log.(abs.(fft(zs[1:subdiv])))[1:64] ./ log(10))
+scatter!(ax1, log.(abs.(fft(pxs[1:subdiv])))[1:64] ./ log(10))
+scatter!(ax2, log.(abs.(fft(pys[1:subdiv])))[1:64] ./ log(10))
+scatter!(ax3, log.(abs.(fft(pzs[1:subdiv])))[1:64] ./ log(10))
 display(fig)
 
 
@@ -65,12 +99,13 @@ display(fig)
 state = Vector{Float64}[]
 current_state = Int64[]
 s = [14.0, 20.0, 27.0]
-subdiv = 100
+subdiv = 200
 push!(state, s)
 dt = 1.5586522107162 / subdiv
-markov_states = periodic_state[1:2^5:2^11]
+markov_states = periodic_state[1:2^7:2^11]
+markov_states = [ab_periodic_state[1:2^5:2^11]..., abb_periodic_state[1:2^5:2^11]..., aab_periodic_state[1:2^5:2^11]...]
 markov_states = [markov_states..., [0.0, 0.0, 0.0], [sqrt(72), sqrt(72), 27], [-sqrt(72), -sqrt(72), 27]]
-for i in ProgressBar(1:1000000)
+for i in ProgressBar(1:4*10000000)
     s = rk4(lorenz!, s, dt)
     push!(current_state, argmin([norm(s - ms) for ms in markov_states]))
     push!(state, s)
@@ -138,8 +173,8 @@ state_timeseries = state
 reaction_coordinate(u) = u[3] # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
 markov = [reaction_coordinate(snapshot) for snapshot in snapshots]
 rtimeseries = [reaction_coordinate(state) for state in state_timeseries]
-xs_m, ys_m = histogram(markov, normalization=p, bins=10, custom_range=extrema(rtimeseries))
-xs_t, ys_t = histogram(rtimeseries, bins=10, custom_range=extrema(rtimeseries))
+xs_m, ys_m = histogram(markov, normalization=p, bins=20, custom_range=extrema(rtimeseries))
+xs_t, ys_t = histogram(rtimeseries, bins=20, custom_range=extrema(rtimeseries))
 fig = Figure()
 kwargs = (; ylabel="probability", titlesize=30, ylabelsize=30)
 ax1 = Axis(fig[1, 1]; title="Ensemble Statistics", kwargs...)
@@ -195,3 +230,24 @@ l1 = lines!(ax1, auto_correlation_snapshots[:], color=:red)
 l2 = lines!(ax1, auto_correlation_timeseries[:], color=:blue)
 Legend(auto_fig[1, 2], [l1, l2], ["Markov", "Timeseries"])
 display(auto_fig)
+
+##
+function coarse_grain_operator(identified_states)
+    operator = zeros(length(identified_states), sum(length.(identified_states)))
+    for (i, states) in enumerate(identified_states)
+        for state in states
+            operator[i, state] = 1
+        end
+    end
+    return operator
+end
+
+numind = floor(Int, (length(markov_states) - 3) / 3)
+ab_indices = collect(1:numind)
+aab_indices = ab_indices[end] .+ collect(1:numind)
+abb_indices = aab_indices[end] .+ collect(1:numind)
+identified_states = [ab_indices, aab_indices, abb_indices, [abb_indices[end] + 1], [abb_indices[end] + 2], [abb_indices[end] + 3]]
+
+P = coarse_grain_operator(identified_states)
+P⁺ = (P ./ sum(P, dims=2))' # Moore-Penrose pseudoinverse, pinv(P) also works
+Q̂ = P * Q * P⁺
