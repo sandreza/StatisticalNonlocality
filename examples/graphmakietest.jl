@@ -16,7 +16,7 @@ ax_Q = Axis(fig[1, 2]; title="Transition Rate", titlesize=30)
 
 dt_slider = Slider(fig[2, 1:2], range=0:0.01:10, startvalue=0)
 dt = dt_slider.value
-# Q = ou_transition_matrix(4)
+Q = ou_transition_matrix(4)
 # Q = uniform_phase(4)
 T = @lift exp(Q * $dt)
 
@@ -31,7 +31,7 @@ node_labels = repr.(1:nv(g))
 edge_color_Q = [RGBAf(cmapa[4].r, cmapa[4].g, cmap[4].b, 1.0) for i in 1:ne(g_Q)]
 edge_width_Q = [4.0 for i in 1:ne(g_Q)]
 arrow_size_Q = [30.0 for i in 1:ne(g_Q)]
-node_labels_Q = reverse(repr.(1:nv(g_Q)))
+node_labels_Q = repr.(1:nv(g_Q))
 node_size = 20.0
 
 # obs_string = @lift("Transition Probability at time t = " * string($dt) )
