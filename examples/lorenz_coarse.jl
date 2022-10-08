@@ -136,16 +136,16 @@ tuple_state = Tuple.(state)
 ##
 
 fig = Figure(resolution = (2000, 1500)) 
-ax = LScene(fig[1:2,1:2])
-ax2 = Axis(fig[1,3])
-ax3 = Axis(fig[2,3])
+ax = LScene(fig[1:2,1:2]) # title = "Phase Space and Partitions", titlesize = 40)
+ax2 = Axis(fig[1,3]; title = "Markov Embedding ", titlesize = 30)
+ax3 = Axis(fig[2,3]; title = "Transition Rate Matrix", titlesize = 30)
 lorenz_slider = Slider(fig[3, 1:2], range=3:1:1000000, startvalue=1000)
 observable_index = lorenz_slider.value
 plot_state = @lift(tuple_state[2:$observable_index+1])
 plot_colors = @lift(colors[1:$observable_index])
 lines!(ax, plot_state, color = plot_colors)
-scatter!(ax, @lift($plot_state[end]), color = :black, markersize = 4000.0)
-scatter!(ax, Tuple.(markov_states), color = [:red, :blue, :orange], markersize = 4000.0)
+scatter!(ax, @lift($plot_state[end]), color = :black, markersize = 40.0)
+scatter!(ax, Tuple.(markov_states), color = [:red, :blue, :orange], markersize = 40.0)
 
 xaxis_scatter = @lift(1:$observable_index)
 yaxis_scatter = @lift(current_state[1:$observable_index])
@@ -153,24 +153,41 @@ sc = scatter!(ax2, yaxis_scatter, color = plot_colors)
 xlims!(ax2, (1, 1000))
 display(fig)
 
+Q = @lift(transition_rate_matrix($yaxis_scatter, 3; γ=dt))
+# rv = @lift(check_this($observable_index))
+string_index_end = @lift( ($observable_index > 1500) ? 4 : 3)
 locations = Tuple[]
-for i in 1:3, j in 1:3 
+for i in 1:3, j in 1:3
     push!(locations, (i, j))
-    scatter!(ax3, (i,j), label = "3") #  markersize = 4000.0)
+    if i == j
+        text!(ax3, (4-i, j), color = color_choices[i], textsize = 40.0, text = @lift(string($Q[j,i])[1:$string_index_end])) 
+    else
+        text!(ax3, (4-i, j), color = color_choices[i], textsize = 40.0, text = @lift(string($Q[j,i])[1:$string_index_end])) 
+    end
 end
-
+xlims!(ax3, (0,4))
+ylims!(ax3, (0,4))
+hidedecorations!(ax3)
+text!(ax3, (0, 2), color=:black, textsize=40.0, text = "Q = ")
 
 rotate_cam!(ax.scene, (0, π/4, 0))
 framerate = 2 * 30
-tmp = ones(Int, 100) * 1000 # repeat a thousand for a little wile
-time_indices = [collect(2:1:2000)...] # tmp...,  collect(1000:10:10000)..., collect(10000:100:100000)..., length(tuple_state)-1]
 # current_state up to 2000 seems nice 
+time_upper_bound = 2000
+
+tmp = ones(Int, 500) * time_upper_bound  # repeat for a little while
+tmp2 = ones(Int, 1000) * (length(tuple_state)-1)
+time_indices = [collect(2:1:time_upper_bound)..., tmp..., collect(time_upper_bound:10:10000)..., collect(10000:100:100000)..., tmp2...]
 
 function change_function(time_index)
     observable_index[] = time_index
     phase = 2π / 1000
     rotate_cam!(ax.scene, (0, phase,  0))
-    xlims!(ax2, (1, observable_index[]))
+    if observable_index[] < Inf # time_upper_bound
+        xlims!(ax2, (1, observable_index[]))
+    else
+        xlims!(ax2, (1, time_upper_bound))
+    end
 end
 record(change_function, fig, "lorenz_animation_3.mp4", time_indices; framerate = framerate)
 
