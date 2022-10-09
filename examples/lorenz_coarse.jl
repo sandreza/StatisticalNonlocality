@@ -151,18 +151,25 @@ xaxis_scatter = @lift(1:$observable_index)
 yaxis_scatter = @lift(current_state[1:$observable_index])
 sc = scatter!(ax2, yaxis_scatter, color = plot_colors)
 xlims!(ax2, (1, 1000))
+ylims!(ax2, (0.5, 3.5))
+
+ax2.yticklabelsize = 40
+ax2.yticks = ([1, 2, 3], ["Negative Lobe", "Origin", "Positive Lobe"])
+
 display(fig)
 
 Q = @lift(transition_rate_matrix($yaxis_scatter, 3; γ=dt))
 # rv = @lift(check_this($observable_index))
-string_index_end = @lift( ($observable_index > 1500) ? 4 : 3)
+observable_index[] = 2
+string_index_end1 = @lift( ($observable_index > 1500) ? 4 : 3)
+string_index_end2 = @lift(($observable_index > 200) ? 4 : 3)
 locations = Tuple[]
 for i in 1:3, j in 1:3
     push!(locations, (i, j))
     if i == j
-        text!(ax3, (4-i, j), color = color_choices[i], textsize = 40.0, text = @lift(string($Q[j,i])[1:$string_index_end])) 
+        text!(ax3, (4-i, j), color = color_choices[i], textsize = 40.0, text = @lift(string($Q[j,i])[1:$string_index_end2])) 
     else
-        text!(ax3, (4-i, j), color = color_choices[i], textsize = 40.0, text = @lift(string($Q[j,i])[1:$string_index_end])) 
+        text!(ax3, (4-i, j), color = color_choices[i], textsize = 40.0, text = @lift(string($Q[j,i])[1:$string_index_end1])) 
     end
 end
 xlims!(ax3, (0,4))
@@ -170,14 +177,14 @@ ylims!(ax3, (0,4))
 hidedecorations!(ax3)
 text!(ax3, (0, 2), color=:black, textsize=40.0, text = "Q = ")
 
-rotate_cam!(ax.scene, (0, π/4, 0))
+rotate_cam!(ax.scene, (0, -π/4, 0))
 framerate = 2 * 30
 # current_state up to 2000 seems nice 
 time_upper_bound = 2000
 
-tmp = ones(Int, 500) * time_upper_bound  # repeat for a little while
-tmp2 = ones(Int, 1000) * (length(tuple_state)-1)
-time_indices = [collect(2:1:time_upper_bound)..., tmp..., collect(time_upper_bound:10:10000)..., collect(10000:100:100000)..., tmp2...]
+tmp = ones(Int, 1000) * time_upper_bound  # repeat for a little while
+tmp2 = ones(Int, 2) * (length(tuple_state)-1)
+time_indices = [collect(2:1:time_upper_bound)..., tmp..., collect(time_upper_bound:100:100000)..., tmp2...] # collect(10000:100:100000)..., tmp2...]
 
 function change_function(time_index)
     observable_index[] = time_index
@@ -189,6 +196,7 @@ function change_function(time_index)
         xlims!(ax2, (1, time_upper_bound))
     end
 end
+
 record(change_function, fig, "lorenz_animation_3.mp4", time_indices; framerate = framerate)
 
 ##
