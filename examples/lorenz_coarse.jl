@@ -248,7 +248,7 @@ mean(pzs)
 ##
 snapshots = markov_states
 state_timeseries = state
-reaction_coordinate(u) = u[3] < 8 # norm(u) # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
+reaction_coordinate(u) = u[1] / (0.1 + u[3]) * 3/8# norm(u) # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
 markov = [reaction_coordinate(snapshot) for snapshot in snapshots]
 rtimeseries = [reaction_coordinate(state) for state in state_timeseries]
 xs_m, ys_m = histogram(markov, normalization=p, bins=20, custom_range=extrema(rtimeseries))
@@ -301,6 +301,25 @@ for i in ProgressBar(0:total-1)
 end
 auto_correlation_snapshots .= auto_correlation_snapshots .- sum(val .* p)^2;
 auto_correlation_snapshots .*= 1.0 / auto_correlation_snapshots[1];
+##
+# check the holding times 
+ht = construct_holding_times(current_state, 3; γ = dt)
+
+holding_time_index = 1
+holding_time_limits_left = (0,ceil(Int, maximum(ht[holding_time_index]) ))
+holding_time_left, holding_time_probability_left = histogram(ht[holding_time_index]; bins = 10, custom_range = holding_time_limits_left )
+
+fig = Figure() 
+ax = Axis(fig[1, 1]; title="Holding Time Distribution", xlabel="time", ylabel="Probability", titlesize=30, ylabelsize=30, xlabelsize=30)
+barplot!(ax, holding_time_left, holding_time_probability_left, color=:red)
+λ_left = mean(ht[holding_time_index])
+# holding_time_fine_left = range(0, 30 / λ_left, length=100000)
+Δholding_time_left = holding_time_left[2] - holding_time_left[1]
+exponential_distribution_left = @. (exp( - λ_left  * (holding_time_left - 0.5 *  Δholding_time_left)) - exp( - λ_left  * (holding_time_left + 0.5 *  Δholding_time_left)) ) 
+lines!(ax, holding_time_left, exponential_distribution_left, color = :black, linewidth = 3)
+scatter!(ax, holding_time_left, exponential_distribution_left, color = :black, markersize = 10)
+
+display(fig)
 ##
 auto_fig = Figure()
 ax1 = Axis(auto_fig[1, 1]; title="Ensemble Statistics")
