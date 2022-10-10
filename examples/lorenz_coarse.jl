@@ -154,7 +154,8 @@ xlims!(ax2, (1, 1000))
 ylims!(ax2, (0.5, 3.5))
 
 ax2.yticklabelsize = 40
-ax2.yticks = ([1, 2, 3], ["Negative Lobe", "Origin", "Positive Lobe"])
+index_names = ["Negative Lobe", "Origin", "Positive Lobe"]
+ax2.yticks = ([1, 2, 3], index_names)
 
 display(fig)
 
@@ -248,7 +249,7 @@ mean(pzs)
 ##
 snapshots = markov_states
 state_timeseries = state
-reaction_coordinate(u) = u[1] / (0.1 + u[3]) * 3/8# norm(u) # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
+reaction_coordinate(u) = u[3]# u[1] / (0.1 + u[3]) * 3/8# norm(u) # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
 markov = [reaction_coordinate(snapshot) for snapshot in snapshots]
 rtimeseries = [reaction_coordinate(state) for state in state_timeseries]
 xs_m, ys_m = histogram(markov, normalization=p, bins=20, custom_range=extrema(rtimeseries))
@@ -304,21 +305,30 @@ auto_correlation_snapshots .*= 1.0 / auto_correlation_snapshots[1];
 ##
 # check the holding times 
 ht = construct_holding_times(current_state, 3; γ = dt)
+bins = [5, 20, 100]
+color_choices = [:red, :blue, :orange] # same convention as before
+index_names = ["Negative Lobe", "Origin", "Positive Lobe"]
+hi = 1
+bin_index = 1
+labelsize = 40
+options = (; xlabel="Time", ylabel="Probability", titlesize=labelsize, ylabelsize=labelsize, xlabelsize=labelsize, xticklabelsize = labelsize, yticklabelsize = labelsize)
+fig = Figure(resolution = (2800, 1800)) 
+for hi in 1:3, bin_index in 1:3
+    ax = Axis(fig[hi, bin_index]; title= index_names[hi] * " Holding Times "  * ", " * string(bins[bin_index]) * " Bins", options...)
+    holding_time_index = hi
 
-holding_time_index = 1
-holding_time_limits_left = (0,ceil(Int, maximum(ht[holding_time_index]) ))
-holding_time_left, holding_time_probability_left = histogram(ht[holding_time_index]; bins = 10, custom_range = holding_time_limits_left )
+    holding_time_limits = (0,ceil(Int, maximum(ht[holding_time_index]) ))
+    holding_time, holding_time_probability = histogram(ht[holding_time_index]; bins = bins[bin_index], custom_range = holding_time_limits)
 
-fig = Figure() 
-ax = Axis(fig[1, 1]; title="Holding Time Distribution", xlabel="time", ylabel="Probability", titlesize=30, ylabelsize=30, xlabelsize=30)
-barplot!(ax, holding_time_left, holding_time_probability_left, color=:red)
-λ_left = mean(ht[holding_time_index])
-# holding_time_fine_left = range(0, 30 / λ_left, length=100000)
-Δholding_time_left = holding_time_left[2] - holding_time_left[1]
-exponential_distribution_left = @. (exp( - λ_left  * (holding_time_left - 0.5 *  Δholding_time_left)) - exp( - λ_left  * (holding_time_left + 0.5 *  Δholding_time_left)) ) 
-lines!(ax, holding_time_left, exponential_distribution_left, color = :black, linewidth = 3)
-scatter!(ax, holding_time_left, exponential_distribution_left, color = :black, markersize = 10)
-
+    barplot!(ax, holding_time, holding_time_probability, color=color_choices[hi], label = "Data")
+    λ = 1/mean(ht[holding_time_index])
+    # holding_time_fine = range(0, 30 / λ, length=100000)
+    Δholding_time = holding_time[2] - holding_time[1]
+    exponential_distribution = @. (exp( - λ  * (holding_time - 0.5 *  Δholding_time)) - exp( - λ  * (holding_time + 0.5 *  Δholding_time)) ) 
+    lines!(ax, holding_time, exponential_distribution, color = :black, linewidth = 3)
+    scatter!(ax, holding_time, exponential_distribution, color = :black, markersize = 10, label = "Analytic")
+    axislegend(ax, position = :rt, framecolor = (:grey, 0.5), patchsize = (50, 50), markersize = 100, labelsize = 40)
+end
 display(fig)
 ##
 auto_fig = Figure()
