@@ -29,10 +29,11 @@ timeseries = Vector{Float64}[]
 markov_chain = Int64[]
 initial_condition = [14.0, 20.0, 27.0]
 push!(timeseries, initial_condition)
-dt = 0.01# 1.5586522107162 / 64
+dt = 0.01
 iterations = 1000
 
 # grab first markov state
+# note: replace the below thing with the appropriate "assignment" function 
 markov_index = argmin([norm(initial_condition - markov_state) for markov_state in markov_states])
 push!(markov_chain, markov_index)
 
@@ -45,7 +46,6 @@ for i in ProgressBar(2:iterations)
     push!(markov_chain, markov_index)
 end
 
-##
 # create colors for the plot
 colors = Symbol[]
 color_choices = [:red, :blue, :orange] # add more colors here for each partition
@@ -53,8 +53,8 @@ for i in eachindex(timeseries)
     push!(colors, color_choices[markov_chain[i]])
 end
 tuple_timeseries = Tuple.(timeseries)
-##
 
+# everything is done for plotting
 fig = Figure(resolution = (1000, 700)) 
 ax = LScene(fig[1:2,1:2]; show_axis = false)
 lines!(ax, tuple_timeseries, color = colors)
