@@ -1,4 +1,4 @@
-using ProgressBars, LinearAlgebra, Statistics
+using ProgressBars, LinearAlgebra, Statistics, Random
 using GLMakie
 
 # generate data
@@ -88,13 +88,12 @@ for i in ProgressBar(2:iterations)
     markov_index = argmin([norm(state - markov_state) for markov_state in markov_states])
     push!(markov_chain, markov_index)
 end
-# markov_states = timeseries[randperm(length(timeseries))[1:100]]
 
 ##
 # create colors for the plot
 colors = []
 # non-custom, see https://docs.juliaplots.org/latest/generated/colorschemes/
-color_choices = cgrad(:rainbow, length(markov_states), categorical=true)[randperm(length(markov_states))]# 12 is the number of states
+color_choices = cgrad(:rainbow, length(markov_states), categorical=true)[randperm(length(markov_states))]
 n = length(ab_periodic_state[1:2^m:end-1])
 color_choices = [[:pink for i in 1:3]..., [:orange for i in 1:n]..., [:blue for i in 1:n]..., [:green for i in 1:n]...]
 # custom 
