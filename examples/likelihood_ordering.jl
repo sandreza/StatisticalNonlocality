@@ -1,4 +1,5 @@
 # Find Cyclic Reductions if possible
+# can do Q for probabalistic forecast and Q' for more deterministic question
 likelihood_ordering = [argmax(Q[:, i]) for i in 1:length(snapshots)]
 
 mpp(i) = likelihood_ordering[i]
@@ -14,8 +15,6 @@ for i in ProgressBar(1:length(snapshots))
     push!(mpp_dynamics_end, union(mpp_dynamics[end-length(snapshots):end]))
 end
 cyclic_groups = union(mpp_dynamics_end)
-cyclic_groups[5]
-cyclic_groups[6]
 generators = [sort(generator)[1] for generator in cyclic_groups]
 generators = union(generators)
 
@@ -30,6 +29,7 @@ for i in ProgressBar(generators)
     push!(mpp_dynamics_end, union(mpp_dynamics[end-length(snapshots):end]))
 end
 
+cyclic_groups = mpp_dynamics_end
 ## Reduced Dynamics: 
 # sum(length.(cyclic_groups))
 

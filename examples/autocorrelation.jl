@@ -20,7 +20,7 @@ function reaction_coordinate(u)
     # (mean(u .^2) .> 4) && (mean(u .^2) .< 6)
     # cluster = argmin([distance(u, s) for s in states])
     # coarse_state = states[cluster]
-    return gpr(u) # real(V⁻¹[end-1, cluster])
+    return mean(u .^2) # gpr(u) # real(V⁻¹[end-1, cluster])
 end
 ##
 totes = floor(Int64, 200 / skip)

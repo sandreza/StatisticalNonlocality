@@ -97,7 +97,7 @@ xvals = range(extrema(xs)..., length=100)
 yvals = range(extrema(ys)..., length=100)
 p[2] ≈ gpr(snapshots[2], predictor, maxD, snapshots) # check correctness
 gpr_prediction = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
-heatmap(gpr_prediction, colorrange=(0, median(p)), colormap=:bone, interpolate=true)
+heatmap(gpr_prediction, colorrange=(0, median(p)), colormap=:afmhot, interpolate=true)
 ##
 fig = Figure()
 ax1 = Axis(fig[1, 1])
@@ -150,17 +150,34 @@ fig = Figure()
 ax1 = Axis(fig[1, 1])
 ax2 = Axis(fig[1, 2])
 
+# these fields are bounded below by zero, the latter is bounded above by 1
 field = rowsum
-predictor = 𝒦 \ (field) # visualize second largest eigenvector
+predictor = 𝒦 \ (field)
 ufield = quantile(abs.(field), 0.5)
 colorrange = (0, ufield)
 gpr_field1 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
 heatmap!(ax1, gpr_field1, colorrange=colorrange, colormap=:afmhot, interpolate=true)
 
 field = colprob
-predictor = 𝒦 \ (field) # visualize second largest eigenvector
+predictor = 𝒦 \ (field)
 ufield = quantile(abs.(field), 0.5)
 colorrange = (0, ufield)
 gpr_field2 = [gpr([x, y], predictor, maxD, snapshots) for x in xvals, y in yvals]
 heatmap!(ax2, gpr_field2, colorrange=colorrange, colormap=:afmhot, interpolate=true)
 display(fig)
+
+##
+xrange = range(extrema(xₘ)..., length=100)
+yrange = range(extrema(yₘ)..., length=100)
+set = [Tuple([x, y]) for x in xrange, y in yrange]
+invmap = [Tuple(henon⁻¹([x, y])) for x in xrange, y in yrange]
+map = [Tuple(henon([x, y])) for x in xrange, y in yrange]
+
+set = [Tuple(ss .+ ([0.01; 0.001] .* randn(2))) for ss in s]
+invmap = [Tuple(henon⁻¹(s )) for s in set]
+map = [Tuple(henon(s)) for s in set]
+
+
+scatter(map[:])
+scatter!(invmap[:])
+scatter!(set[:])

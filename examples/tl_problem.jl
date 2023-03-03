@@ -1,13 +1,13 @@
 using LinearAlgebra, Random, ProgressBars, GLMakie, Statistics, Random, Distributions
 import StatisticalNonlocality: ou_transition_matrix
 
-k = 0.1 # wavenumber
+k = 1.0 # wavenumber
 κ = 0.1 # diffusivity
 λ = 0.0 # relaxation rate 
 γ = 0.1 # ou relaxation: default = 1.0
 ϵ = 1.0 # noise strength: default = √2
 
-N = 10 # number of markov states - 1, numerically unstable for large N
+N = 3 # number of markov states - 1, numerically unstable for large N
 
 # construct markov approximation 
 Δx = 2 / √N

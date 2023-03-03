@@ -138,7 +138,7 @@ tuple_state = Tuple.(state)
 fig = Figure(resolution = (2000, 1500)) 
 ax = LScene(fig[1:2,1:2]) # title = "Phase Space and Partitions", titlesize = 40)
 ax2 = Axis(fig[1,3]; title = "Markov Embedding ", titlesize = 30)
-ax3 = Axis(fig[2,3]; title = "Transition Rate Matrix", titlesize = 30) # perhaps call generator? 
+ax3 = Axis(fig[2,3]; title = "Generator", titlesize = 30) # perhaps call generator? 
 lorenz_slider = Slider(fig[3, 1:2], range=3:1:1000000, startvalue=1000)
 observable_index = lorenz_slider.value
 plot_state = @lift(tuple_state[2:$observable_index+1])
@@ -248,7 +248,6 @@ mean(pys)
 mean(pzs)
 
 ##
-##
 Q = transition_rate_matrix(current_state, length(markov_states); γ=dt);
 Λ, V = eigen(Q)
 iV = inv(V)
@@ -270,7 +269,8 @@ kwargs = (; ylabel="probability", titlesize=30, ylabelsize=40, xgridstyle=:dash,
     xticklabelsize=40, yticklabelsize=40)
 bins1 = 30
 bins2 = 20
-
+snapshots = copy(markov_states)
+state_timeseries = copy(state)
 for i in 1:3
     current_reaction_coordinate = reaction_coordinates[i]
     subfig = subfigs[i]

@@ -93,4 +93,4 @@ function change_function(time_index)
     rotate_cam!(ax.scene, (0, phase, 0))
 end
 
-record(change_function, fig, "lorenz_animation_attractor_2.mp4", time_indices; framerate=60)
+record(change_function, fig, "lorenz_animation_attractor_2.mp4", time_indices; framerate=2*60)

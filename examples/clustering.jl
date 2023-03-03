@@ -1,7 +1,7 @@
 using LinearAlgebra
 import StatisticalNonlocality: ou_transition_matrix
 
-n = 5
+n = 50
 M6 = ou_transition_matrix(n)
 n = 3
 M4 = ou_transition_matrix(n)
@@ -22,7 +22,7 @@ function coarse_grain_operator(identified_states)
     return operator
 end
 
-identified_states = [[1, 2, 3], [4, 5, 6]]
+identified_states = [[3, 4, 5], [1, 2, 6]]
 tmp = []
 for states in identified_states
     tmp = [states..., tmp...]

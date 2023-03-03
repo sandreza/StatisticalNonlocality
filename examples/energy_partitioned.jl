@@ -65,11 +65,12 @@ norm(perron_frobenius8^2 - perron_frobenius16) / norm(perron_frobenius16)
 
 ##
 function partition_coordinate(state)
-    return sqrt(mean(state .^2))
+    return mean(u .^2) > 8
 end
 ctimeseries = [partition_coordinate(state[:,i]) for i in 1:size(state, 2)]
 plot(ctimeseries[1:1000])
-estates = range(extrema(ctimeseries)..., length=20)
+partition_quantiles = range(0, 1, length = 2)
+estates = quantile.(Ref(ctimeseries), partition_quantiles)
 
 current_state = Int64[]
 global newtic = time()
@@ -94,8 +95,8 @@ perron_frobeniuse = count_matrix ./ sum(count_matrix, dims=1);
 Qe = transition_rate_matrix(current_state, length(estates); γ=1);
 ΛQe = eigvals(Qe)
 ΛPFe = eigvals(perron_frobeniuse)
-log(ΛPFe[end-1])
-ΛQe[end-1]
+println(log(ΛPFe[end-1]))
+println(ΛQe[end-1])
 checkfiz = sum(sum(Qe .> 0, dims=1)[:] .<= 2) == length(estates)
 
 println("The check for physicality is ", checkfiz)
@@ -106,7 +107,7 @@ dt = 1.0
 val = collect(estates)
 Pτ = perron_frobeniuse * 0 + I
 Λ, V = eigen(perron_frobeniuse)
-p = V[:, end] ./ sum(V[:, end])
+p = real(V[:, end] ./ sum(V[:, end]))
 for i in 0:totes-1
     # τ = i * dt
     # Pτ = real.(V * Diagonal(exp.(Λ .* τ)) * V⁻¹)
@@ -186,7 +187,7 @@ entropy = sum(-p .* log.(p) / log(length(energy_partitioned_states)))
 println("The entropy is ", entropy) # uniform distribution for a given N is always assigned to be one
 ll[end-1]
 ##
-reaction_coordinate(x) = argmin([distance(x, s) for s in energy_partitioned_states])
+reaction_coordinate(u) = maximum(u) # argmin([distance(x, s) for s in energy_partitioned_states])
 markov = [reaction_coordinate(snapshot_estate[:, i]) for i in 1:length(energy_partitioned_states)]
 timeseries = [reaction_coordinate(u[:, i]) for i in snapshots:size(u)[2]]
 xs_m, ys_m = histogram2(markov, normalization=p, bins=20, custom_range=extrema(timeseries))

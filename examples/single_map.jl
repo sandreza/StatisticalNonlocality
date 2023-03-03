@@ -19,8 +19,8 @@ for i in ProgressBar(1:1000000)
 end
 hist(x, bins=100)
 
-sL = 1000
-snapshots = range(-1, 1, length=sL)  #  reverse(cos.(range(0, π, length=sL))) # 
+sL = 100
+snapshots = range(-1, 1, length=sL)  #  reverse(cos.(range(0, π, length=sL))) #   
 current_state = Int64[]
 for snapshot in ProgressBar(x)
     push!(current_state, argmin([abs(s - snapshot) for s in snapshots]))

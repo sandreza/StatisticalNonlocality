@@ -41,7 +41,7 @@ for i in ProgressBar(1:1000000)
 end
 hist(x, bins=100)
 
-snapshots = [i for i in range(quantile.(Ref(x), [0.001, 0.999])..., length=200)]
+snapshots = [i for i in range(quantile.(Ref(x), [0.001, 0.999])..., length=10)]
 # the dynamic allocation is faster than allocating memory for current_state 
 # or the distances function
 current_state = Int64[]
@@ -57,6 +57,7 @@ for i in 1:length(current_state)-1
 end
 perron_frobenius = count_matrix ./ sum(count_matrix, dims=1)
 Q = transition_rate_matrix(current_state, length(snapshots); γ=Δt);
+rQ = transition_rate_matrix(reverse(current_state), length(snapshots); γ=Δt);
 estimated_error = norm(exp(Q * Δt) - perron_frobenius) / norm(perron_frobenius)
 Λ, V = eigen(Q)
 iV = inv(V)
@@ -105,8 +106,6 @@ ci = argmin(gs)
 a = as[ci[1]]
 b = bs[ci[2]]
 rescale_x = a * x .+ b
-
-
 
 rtimeseries = [real(iV[end-1, state]) for state in current_state]
 # rte = maximum(abs.(rtimeseries))

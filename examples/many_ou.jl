@@ -1,10 +1,13 @@
-d1 = 10
+using StatisticalNonlocality, Statistics, GLMakie, ProgressBars, Random, LinearAlgebra
+import StatisticalNonlocality: transition_rate_matrix
+
+d1 = 3
 d = d1^2
 s = Vector{Float64}[]
 push!(s, zeros(d))
 γ = ones(d)
 Δt = 0.01
-for i in ProgressBar(1:100000)
+for i in ProgressBar(1:200000)
     sⁿ = s[i]
     # sⁿ⁺¹ = sⁿ - sⁿ * Δt + √(2Δt) * randn(d)
     sⁿ⁺¹ = (sⁿ + √(2Δt) * randn(d)) ./ (1 .+ γ .* Δt)
@@ -12,7 +15,9 @@ for i in ProgressBar(1:100000)
 end
 
 s₁ = [s1[1] for s1 in s]
-s₂ = [s2[2] for s2 in s]
+if d > 1
+    s₂ = [s2[2] for s2 in s]
+end
 r = norm.(s) ./ sqrt(d)
 r∞ = norm.(s, Inf)
 r1 = norm.(s, 1) ./ d
@@ -26,7 +31,7 @@ d * 2
 var(r) / var(r1)
 var(r∞) / var(r)
 ##
-heatmap(reshape(s[end], (d1, d1)), colormap = :balance, colorrange = (-3,3))
+heatmap(reshape(s[end], (d1, d1)), colormap=:balance, colorrange=(-3, 3))
 ##
 function histogram(
     array;
@@ -74,20 +79,48 @@ display(fig)
 
 ##
 # snapshots = [state for state in s[1:10000:end-1000]]
-snapshots = [state for state in s[1000:10000:end-1000]]
+snapshots = [state for state in s[1000:2000:end-10000]]
+# snapshots = [[i] for i in -3:0.1:3]
 # snapshots = [randn(d) for i in 1:100]
 # snapshots ./= norm.(snapshots) # good partition but then need to select state
+##
+
 
 function distance(x, y)
-    return norm(x - y)
+    return norm(x - y, 2)
 end
 # or the distances function
+##
+maximum_states = Inf # Inf
+temporal_distance = [distance(s[1], state) for state in s]
+distance_threshold = quantile(temporal_distance, 0.99)
+println("starting simulation")
+snapshots = []
+push!(snapshots, s[1])
+for i in ProgressBar(eachindex(s))
+    candidate_state = s[i]
+    distances = [distance(candidate_state, snapshot) for snapshot in snapshots]
+    if length(snapshots) < maximum_states
+        if all(distances .>= distance_threshold)
+            push!(snapshots, candidate_state)
+        end
+    end
+end
+println("There are currently ", length(snapshots), " snapshots")
+snapshots = snapshots[2:end]
+distance_threshold = quantile(temporal_distance, 1/length(snapshots))
+##
 current_state = Int64[]
 for i in ProgressBar(eachindex(s))
     state = s[i]
-    partition = argmin([distance(state, snapshot) for snapshot in snapshots])
-    push!(current_state, partition)
+    if distance(state, 0 .* state) < distance_threshold 
+        push!(current_state, length(snapshots) + 1)
+    else
+        partition = argmin([distance(state, snapshot) for snapshot in snapshots])
+        push!(current_state, partition)
+    end
 end
+push!(snapshots, snapshots[1] .* 0.0)
 
 length(union(current_state)) == length(snapshots)
 
@@ -138,17 +171,18 @@ function histogram(
 end
 
 ##
-validation_set_size = 100000
+validation_set_size = 200000
 validation_set = zeros(d, validation_set_size)
 Δt = 0.01
 validation_set[:, 1] .= s[end]
 for i in ProgressBar(1:validation_set_size-1)
     sⁿ = validation_set[:, i]
-    sⁿ⁺¹ = sⁿ - sⁿ * Δt + √(2Δt) * randn(d)
+    # sⁿ⁺¹ = sⁿ - sⁿ * Δt + √(2Δt) * randn(d)
+    sⁿ⁺¹ = (sⁿ + √(2Δt) * randn(d)) ./ (1 .+ γ .* Δt)
     validation_set[:, i+1] .= sⁿ⁺¹
 end
 ##
-reaction_coordinate(u) = u[1] # real(iV[end-2, argmin([distance(u, s) for s in snapshots])])
+reaction_coordinate(u) = u[1]# distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
 markov = [reaction_coordinate(snapshot) for snapshot in snapshots]
 rtimeseries = [reaction_coordinate(validation_set[:, i]) for i in 1:size(validation_set, 2)]
 xs_m, ys_m = histogram(markov, normalization=p, bins=20, custom_range=extrema(rtimeseries))

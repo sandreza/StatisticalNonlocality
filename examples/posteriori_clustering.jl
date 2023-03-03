@@ -33,7 +33,7 @@ for states in identified_states
     tmp = [states..., tmp...]
 end
 check = collect(1:length(snapshots))
-sdif = setdiff(check, tmp)
+sdif = setdiff(check, union(tmp))
 fixed_up = copy(identified_states)
 for i in sdif
     push!(fixed_up, [i])
@@ -56,4 +56,4 @@ end
 
 Qc = transition_rate_matrix(coarse_state, length(fixed_up); γ=1);
 
-norm(Q̂ - Qc) / norm(Q̂)
+norm(Q̂ - Qc) / norm(Q̂) * 100

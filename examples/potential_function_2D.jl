@@ -2,10 +2,11 @@ using Enzyme, Random, GLMakie, ProgressBars, Statistics, LinearAlgebra
 import StatisticalNonlocality: transition_rate_matrix
 
 function U(v⃗)
-    x = v⃗[1]
-    y = v⃗[2]
-    return ((x - 1)^2 + 0.01) * ((x + 1)^2 + 0.0) * (x^2 + 0.02) + ((y - 1)^2) * (y + 1)^2
+    x = v⃗[1] # - 0.05 * v⃗[2]
+    y = v⃗[2] # + 0.05 * v⃗[1]
+    return ((x - 1)^2 + 0.01) * ((x + 1)^2 + 0.0) * (x^2 + 0.02) + ((y - 1)^2 + 0.00 * abs.(x+1)) * (y + 1)^2
 end
+
 
 # better to use reverse mode than forward mode here (for some reason)
 ∇U(x) = gradient(Enzyme.Reverse, U, x)
@@ -53,8 +54,8 @@ xc2 = [xc[2] for xc in x]
 hist!(ax1, xc1, bins=100)
 hist!(ax2, xc2, bins=100)
 
-xL = 50
-yL = 50
+xL = 50# 50
+yL = 50# 50
 xp = range(quantile.(Ref(xc1), [0.01, 0.99])..., length=xL)
 yp = range(quantile.(Ref(xc2), [0.01, 0.99])..., length=yL)
 snapshots = [[xcs, ycs] for xcs in xp, ycs in yp]
@@ -73,7 +74,9 @@ count_matrix = zeros(length(snapshots), length(snapshots));
 for i in 1:length(current_state)-1
     count_matrix[current_state[i+1], current_state[i]] += 1
 end
+problandscape = reshape(sum(count_matrix, dims=1), (xL, yL))
 perron_frobenius = count_matrix ./ sum(count_matrix, dims=1)
+backwards_frobenius = count_matrix' ./ sum(count_matrix', dims = 1)
 Q = transition_rate_matrix(current_state, length(snapshots); γ=Δt);
 estimated_error = norm(exp(Q * Δt) - perron_frobenius) / norm(perron_frobenius)
 Λ, V = eigen(Q)
@@ -85,9 +88,8 @@ p_exact = p_exact / sum(p_exact)
 fig = Figure()
 ax1 = Axis(fig[1, 1])
 ax2 = Axis(fig[1, 2])
-heatmap!(ax1, reshape(p_exact, (xL, yL)), interpolate=true, colormap=:bone)
-heatmap!(ax2, reshape(p, (xL, yL)), interpolate=true, colormap=:bone)
-##
+heatmap!(ax1, reshape(p_exact, (xL, yL)), interpolate=true, colormap=:afmhot)
+heatmap!(ax2, reshape(p, (xL, yL)), interpolate=true, colormap=:afmhot)
 ##
 # compare accuracy of numerical solution 
 sum(snapshots .* p)
@@ -126,3 +128,5 @@ lines!(ax12, -rtimeseries1[1:1:25000], color=:red, linewidth=3)
 lines!(ax22, -rtimeseries2[1:1:25000], color=:red, linewidth=3)
 
 display(fig)
+
+##

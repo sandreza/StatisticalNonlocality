@@ -7,12 +7,12 @@ import Distributions: Uniform
 Random.seed!(10001)
 
 # number_of_states
-number_of_states = 8
+number_of_states = 4
 # simulate a continuous time markov process
 T = ou_transition_matrix(number_of_states - 1)
 # T = uniform_phase(4)
 
-γ = 0.1 # γ is basically the dt of the system let's say
+γ = 0.01 # γ is basically the dt of the system let's say
 eT = exp(γ * T) # get the transition probabilities
 # each column gives the transition probability
 # column i, means, given that I am in state i, each row j gives the probability to transition to state j
@@ -130,4 +130,9 @@ println("This is independent of the choice of timestep, but may yield wonky tran
 println("Note that if one does not resolve the slowest decorrelation scale in the process then one gets the following eigenvalue ")
 println(eigvals(lowrez_transition_probability)[end-1])
 println("as opposed to ", eigvals(exact_transition_probability)[end-1]^skip)
+
+##
+δ = abs(sqrt(var(holding_times[1])) - mean(holding_times[1]))
+λᵘ = 1 / (mean(holding_times[1]) + 3*δ)
+λˡ = 1 / (mean(holding_times[1]) - 3*δ)
 

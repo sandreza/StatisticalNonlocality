@@ -3,7 +3,9 @@ function rare_event(u)
 end
 # remove rare events from snapshots 
 snapshots = snapshots[(!).(rare_event.(snapshots))]
+# find rare events from data set
 nstates = length(snapshots)
+tic = time()
 rare_snapshots = []
 for i in 1:size(training_set, 2)
     snapshot = training_set[:, i]
@@ -13,10 +15,11 @@ for i in 1:size(training_set, 2)
     toc = time()
     if toc - tic > 1
         println("currently at ", i, " out of ", size(training_set, 2))
-        println("added ", length(rare_snapshots), " rare events")
+        println("added ", length(rare_snapshots), " rare events so far")
         tic = time()
     end
 end
+println("added ", length(rare_snapshots), " rare events in total ")
 
 ##
 # Train Differently

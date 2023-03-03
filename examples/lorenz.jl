@@ -102,10 +102,10 @@ s = [14.0, 20.0, 27.0]
 subdiv = 200
 push!(state, s)
 dt = 1.5586522107162 / subdiv
-markov_states = periodic_state[1:2^7:2^11]
-markov_states = [ab_periodic_state[1:2^5:2^11]..., abb_periodic_state[1:2^5:2^11]..., aab_periodic_state[1:2^5:2^11]...]
-markov_states = [markov_states..., [0.0, 0.0, 0.0], [sqrt(72), sqrt(72), 27], [-sqrt(72), -sqrt(72), 27]]
-for i in ProgressBar(1:4*10000000)
+markov_states = periodic_state[1:2^4:2^11]
+# markov_states = [ab_periodic_state[1:2^4:2^11]..., abb_periodic_state[1:2^4:2^11]..., aab_periodic_state[1:2^4:2^11]...]
+markov_states = [markov_states..., [-sqrt(72), -sqrt(72), 27], [0.0, 0.0, 0.0], [sqrt(72), sqrt(72), 27]]
+for i in ProgressBar(1:4*1000000)
     s = rk4(lorenz!, s, dt)
     push!(current_state, argmin([norm(s - ms) for ms in markov_states]))
     push!(state, s)
@@ -149,12 +149,18 @@ end
 count_matrix = reduced_count_matrix
 
 perron_frobenius = count_matrix ./ sum(count_matrix, dims=1)
+r_perron_frobenius = count_matrix' ./ sum(count_matrix', dims =1)
 Λ, V =  eigen(perron_frobenius)
+
 Q = transition_rate_matrix(current_state, length(markov_states); γ=dt);
+rQ = transition_rate_matrix(reverse(current_state), length(markov_states); γ=dt)
 Λ, V =  eigen(Q)
 p = real.(V[:,end] ./ sum(V[:,end]))
 entropy = sum(-p .* log.(p) / log(length(markov_states)))
 println("The entropy is ", entropy) # uniform distribution for a given N is always assigned to be one
+
+fbmat = r_perron_frobenius * perron_frobenius
+Λᵗ, Vᵗ = eigen(fbmat)
 
 scatter(1 ./ abs.(Λ[1:end-1]))
 scatter(abs.(Λ))
@@ -170,7 +176,7 @@ mean(pzs)
 ##
 snapshots = markov_states
 state_timeseries = state
-reaction_coordinate(u) = u[3] # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
+reaction_coordinate(u) = u[3] # norm(u) # - mean(u[4][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims =(1,2))[1] .* mean(u[2][1+shiftx:15+shiftx, 1+shifty:15+shifty, end-2], dims=(1, 2))[1]  # u[2][120, 30, end-0] * u[4][120, 30, end-0] # mean(u[1][:, 30, end], dims=1)[1] # * u[4][140, 60, end-2] # * u[1][130, 60, end-1] # * u[4][140+0, 60+0, end]  # distance(u, snapshots[4])# real(iV[1, argmin([distance(u, s) for s in snapshots])])
 markov = [reaction_coordinate(snapshot) for snapshot in snapshots]
 rtimeseries = [reaction_coordinate(state) for state in state_timeseries]
 xs_m, ys_m = histogram(markov, normalization=p, bins=20, custom_range=extrema(rtimeseries))
@@ -206,9 +212,9 @@ println("The absolute error between the ensemble and temporal means is ", abs(en
 println("The relative error between the ensemble and temporal variances are ", 100 * abs(ensemble_variance - temporal_variance) / temporal_variance, " percent")
 
 ##
-total = 400
+total = 800*3*3
 auto_correlation_timeseries = zeros(total)
-for s in 0:total-1
+for s in ProgressBar(0:total-1)
     auto_correlation_timeseries[s+1] = mean(rtimeseries[s+1:end] .* rtimeseries[1:end-s])
 end
 auto_correlation_timeseries .-= mean(rtimeseries)^2

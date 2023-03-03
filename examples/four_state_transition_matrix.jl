@@ -61,3 +61,36 @@ kroneckered_phase = kron(sT, I + 0 * sT) + kron(I + 0 * sT, sT)
 idmat = I + 0 * sT # the identity matrix
 kroneckered_phase = kron(sT, idmat, idmat) + kron(idmat, sT, idmat) + kron(idmat, idmat, sT)
 Λ, V = eigen(kroneckered_phase)
+
+##
+import StatisticalNonlocality: ou_transition_matrix
+
+T = ou_transition_matrix(10)
+P = exp(0.1 .* T)
+Λ, V = eigen(P)
+p = real.(V[:, end] ./ sum(V[:, end]))
+entropy = 0.0
+
+for i in eachindex(p), j in eachindex(p)
+    global entropy += -p[j] * P[i, j] * log(P[i, j]) / log(2)
+end
+entropy
+
+entropy2 = 0.0
+P² = P * P
+for i in eachindex(p), j in eachindex(p)
+    global entropy2 += -p[j] * P²[i, j] * log(P²[i, j]) / log(2)
+end
+entropy2
+
+entropy∞ = 0.0
+P∞ = p * ones(length(p))'
+for i in eachindex(p), j in eachindex(p)
+    global entropy∞ += -p[j] * P∞[i, j] * log(P∞[i, j]) / log(2)
+end
+entropy∞ 
+
+println("The entropies are ")
+println(entropy)
+println(entropy2)
+println(entropy∞)
