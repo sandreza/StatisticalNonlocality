@@ -1,5 +1,6 @@
-# export fourier_nodes, fourier_wavenumbers, cheb
-using LinearAlgebra, FFTW
+export fourier_nodes, fourier_wavenumbers, cheb
+
+using LinearAlgebra, FFTW, Printf
 
 """
 fourier_nodes(n; a = 0, b = 2π)
@@ -29,10 +30,12 @@ fourier_wavenumbers(N; L = 2π)
 - `wavenumbers`: array | an array of wavevectors
 """
 function fourier_wavenumbers(N; L = 2π)
-    up = collect(0:1:(N - 1))
-    down = collect((-N):1:-1)
+    up = collect(0:1:N-1)
+    down = collect(-N:1:-1)
     indices = up
-    indices[(div(N, 2) + 1):end] = down[(div(N, 2) + 1):end]
+    indices[div(N, 2)+1:end] = down[div(N, 2)+1:end]
+    indices[1] = 0 # edge case
+    indices[div(N, 2)+1] = 0 # edge case
     wavenumbers = 2π / L .* indices
     return wavenumbers
 end

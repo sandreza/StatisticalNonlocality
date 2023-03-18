@@ -1,4 +1,5 @@
 using LinearAlgebra, Random, ProgressBars
+import StatisticalNonlocality: ou_transition_matrix
 
 k = 1.0 # wavenumber
 κ = 0.01 # diffusivity
@@ -6,21 +7,7 @@ k = 1.0 # wavenumber
 γ = 1.0 # ou relaxation: default = 1.0
 ϵ = sqrt(2) # noise strength: default = √2
 
-N = 30 # number of markov states - 1, numerically unstable for large N
-
-# Discrete OU process ALA Charlie Doering
-function ou_transition_matrix(n)
-    Mⱼₖ = zeros(n + 1, n + 1)
-    δ(j, k) = (j == k) ? 1 : 0
-
-    for j in 0:n, k in 0:n
-        jj = j + 1
-        kk = k + 1
-        Mⱼₖ[jj, kk] =
-            (-n * δ(j, k) + k * δ(j + 1, k) + (n - k) * δ(j - 1, k)) / 2
-    end
-    return Mⱼₖ
-end
+N = 2 # number of markov states - 1, numerically unstable for large N
 
 # construct markov approximation 
 Δx = 2 / √N
@@ -35,13 +22,31 @@ vtop = U[end, 1:end-1]
 vbottom = U[1:end-1, end]
 ##
 keff = Float64[]
-for k in ProgressBar(1:N)
+for k in ProgressBar(1:7)
     vbot = im * k * U[1:end-1, 1:end-1] + Diagonal(Λ[1:end-1] .- λ .- κ * k^2)
     𝒦ₘ = -real(vtop' * (vbot \ vbottom))
     push!(keff, 𝒦ₘ)
 end
 ##
-# Not sure if this is totally sensible
+function n_state_keff(N; Ms = 1:7, κ = 0.01, λ = 0.0, γ = 1.0, ϵ = √2)
+    Δx = 2 / √N
+    uₘ = 1 / sqrt(γ * 2 / ϵ^2) * [Δx * (i - N / 2) for i in 0:N]
+    Q = ou_transition_matrix(N) .* γ
+    Λ, V = eigen(Q)
+    V⁻¹ = inv(V)
+    U = V * Diagonal(uₘ) * V⁻¹
+    vtop = U[end, 1:end-1]
+    vbottom = U[1:end-1, end]
+    keff = Float64[]
+    for k in ProgressBar(Ms)
+        vbot = im * k * U[1:end-1, 1:end-1] + Diagonal(Λ[1:end-1] .- λ .- κ * k^2)
+        𝒦ₘ = -real(vtop' * (vbot \ vbottom))
+        push!(keff, 𝒦ₘ)
+    end
+    return keff
+end
+##
+# Hermite Polynomial version
 dl = reverse([1.0 * n for n in 1:N])
 du = [1.0 for n in 1:N]
 d = zeros(N + 1)
@@ -52,7 +57,7 @@ QH = vv * Diagonal(Λ) * inv(vv) # nodal space matrix
 vtop = Uₕ[end, 1:end-1]
 vbottom = Uₕ[1:end-1, end]
 keff_H = Float64[]
-for k in ProgressBar(1:N)
+for k in ProgressBar(1:7)
     vbot = im * k * Uₕ[1:end-1, 1:end-1] + Diagonal(Λ[1:end-1] .- λ .- κ * k^2)
     𝒦ₕ = -real(vtop' * (vbot \ vbottom))
     push!(keff_H, 𝒦ₕ)

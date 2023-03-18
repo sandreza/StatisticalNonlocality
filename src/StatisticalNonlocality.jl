@@ -6,8 +6,8 @@ include("transition_matrices.jl")
 # Chebyshev-Fourier Collocation method
 include("spectral.jl")
 
-# Clustering Algorithms 
-include("clustering.jl")
+# Abstractions 
+include("spectral_abstractions.jl")
 
 # Construction Transition Rate Matrices 
 include("construct_transition_matrices.jl")
