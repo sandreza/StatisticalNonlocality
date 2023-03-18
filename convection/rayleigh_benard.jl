@@ -20,7 +20,7 @@ model = NonhydrostaticModel(;
     closure = ScalarDiffusivity(ν=ν, κ=κ), 
     buoyancy=Buoyancy(model=BuoyancyTracer()),
     tracers = :b,
-    boundary_conditions=(; b = b_bcs)
+    boundary_conditions=(; b = b_bcs, u = u_bcs)
 )
 
 u, v, w = model.velocities
@@ -40,9 +40,9 @@ simulation.callbacks[:progress] = Callback(progress, IterationInterval(100))
 run!(simulation)
 ω = Field(∂x(v) - ∂y(u))
 compute!(ω)
-vizu = interior(u)
-vizω = interior(ω)
-vizb = interior(model.tracers.b)
+vizu = Array(interior(u))
+vizω = Array(interior(ω))
+vizb = Array(interior(model.tracers.b))
 ##
 @info "plotting"
 using GLMakie
