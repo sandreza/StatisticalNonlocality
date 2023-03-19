@@ -7,7 +7,7 @@ k = 1.0 # wavenumber
 γ = 1.0 # ou relaxation: default = 1.0
 ϵ = sqrt(2) # noise strength: default = √2
 
-N = 2 # number of markov states - 1, numerically unstable for large N
+N = 3 # number of markov states - 1, numerically unstable for large N
 
 # construct markov approximation 
 Δx = 2 / √N

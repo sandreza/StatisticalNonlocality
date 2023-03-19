@@ -6,12 +6,13 @@ using GLMakie
 
 keffs = Vector{Float64}[]
 Ms = 0:7
-for N in [1, 2, 3, 4, 99]
+Ns = [1, 2, 3, 4, 14]
+for N in Ns
     keff = n_state_keff(N; Ms = Ms)
     push!(keffs, keff)
 end
 
-Nlabels = ["N = 2", "N = 3", "N = 4", "N = 5", "N = 100"]
+Nlabels = ["N = $(Ns[1]+1)", "N = $(Ns[2]+1)", "N = $(Ns[3]+1)", "N = $(Ns[4]+1)", "N = $(Ns[end]+1)"]
 color_choices = [(:red, 0.5), (:blue, 0.5), (:green, 0.5), (:orange, 0.5), (:black, 0.5)]
 ##
 fig = Figure(resolution=(1718, 889))
@@ -30,6 +31,7 @@ end
 ax.xticks = (collect(Ms), string.(collect(Ms)))
 axislegend(ax, position=:lb, framecolor=(:grey, 0.5), patchsize=(20, 20), markersize=20, labelsize=30)
 display(fig)
+(keffs[end][2:end] - keff1) ./ keff1 * 100
 ##
 save("data/wavenumber_diffusivities.png", fig)
 ##
@@ -37,7 +39,7 @@ save("data/wavenumber_diffusivities.png", fig)
 kernels = Vector{Float64}[]
 keffs2 = Vector{Float64}[]
 Ms = 0:10000
-for N in [1, 2, 3, 4, 99]
+for N in Ns
     keff = n_state_keff(N; Ms=Ms)
     push!(keffs2, keff)
     tmp = [keff[1], keff[2:end]..., reverse(keff[2:end])...]
@@ -45,7 +47,7 @@ for N in [1, 2, 3, 4, 99]
     push!(kernels, kernel)
 end
 ##
-Nlabels = ["N = 2", "N = 3", "N = 4", "N = 5", "N = 100"]
+Nlabels = ["N = $(Ns[1]+1)", "N = $(Ns[2]+1)", "N = $(Ns[3]+1)", "N = $(Ns[4]+1)", "N = $(Ns[end]+1)"]
 color_choices = [(:red, 0.5), (:blue, 0.5), (:green, 0.5), (:orange, 0.5), (:black, 0.25)]
 
 Ns = (length(kernels[1]))
