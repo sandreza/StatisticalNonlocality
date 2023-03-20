@@ -37,3 +37,32 @@ function discrete_laplacian(n)
     return Δ
 end
 
+
+function advection_matrix_central(N; Δx=1.0, u=1.0)
+    A = zeros(N, N)
+    for i in 1:N
+        A[(i-1)%N+1, (i-1*0)%N+1] = 1
+        A[(i+1)%N+1, (i-1*0)%N+1] = -1
+    end
+    return u * A / 2Δx
+end
+
+function advection_matrix_upwind(N; Δx=1.0, u=1.0)
+    A = zeros(N, N)
+    for i in 1:N
+        A[(i-1)%N+1, (i-1*0)%N+1] = (u + abs(u)) / 2
+        A[i, i] = -u
+        A[(i+1)%N+1, (i-1*0)%N+1] = (u - abs(u)) / 2
+    end
+    return A / Δx
+end
+
+function discrete_laplacian_periodic(N; Δx=1.0, κ=1.0)
+    Δ = zeros(N, N)
+    for i in 1:N
+        Δ[i, i] = -2
+        Δ[(i-1)%N+1, (i-1*0)%N+1] = 1
+        Δ[(i+1)%N+1, (i-1*0)%N+1] = 1
+    end
+    return κ * Δ / (Δx^2)
+end

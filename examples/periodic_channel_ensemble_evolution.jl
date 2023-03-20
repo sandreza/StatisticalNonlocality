@@ -11,7 +11,7 @@ using CUDA
 arraytype = Array
 Ω = S¹(2π)×S¹(2)
 N = 2^5 # number of gridpoints
-M = 1000 # number of states
+M = 100 # number of states
 U = 1.0 # amplitude factor
 T = uniform_phase(4)
 γ = 1
@@ -111,7 +111,7 @@ us_base = [u, u2, -u, -u2]
 vs_base = [v, v2, -v, -v2]
 ## timestepping
 Δx = x[2] - x[1]
-cfl = 0.1 #0.1
+cfl = 1.0 #0.1
 advective_Δt = cfl * Δx / maximum(real.(u))
 diffusive_Δt = cfl * Δx^2 / κ
 transition_Δt = cfl / maximum(-real.(eigvals(Q)))
@@ -181,8 +181,34 @@ Nd2 = floor(Int, N / 2) + 1
 fig = Figure(resolution = (2100, 1000))
 titlelables1 = ["Simulated"]
 options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
-ax = Axis(fig[1, i]; title=titlelables1[i], options...)
+ax = Axis(fig[1, 1]; title=titlelables1[1], options...)
 field = real.(mean(θs))[:, 1:Nd2]
 heatmap!(ax, x[:], y[1:Nd2], field, colormap=:balance, interpolate=true)
 contour!(ax, x[:], y[1:Nd2], field, color=:black, levels=10, linewidth=1.0)
+display(fig)
+
+##
+cm = zeros(N, N, 4)
+for i in 1:M 
+    cm[:, :, process[i][end]] .+= θs[i] / M
+end
+
+using GLMakie
+Nd2 = floor(Int, N / 2) + 1
+fig = Figure(resolution=(2100, 1000))
+titlelables1 = ["Θ₁", "Θ₂", "Θ₃", "Θ₄"]
+options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
+for i in 1:4
+    ax = Axis(fig[1, i]; title=titlelables1[i], options...)
+    heatmap!(ax, x[:], y[1:Nd2], cm[:, 1:Nd2, i], colormap=:balance, interpolate=true)
+    contour!(ax, x[:], y[1:Nd2], cm[:, 1:Nd2, i], color=:black, levels=10, linewidth=1.0)
+end
+Random.seed!(12345)
+process_index =  sort([rand(1:M) for i in 1:4])
+titlelables2 = "Realization " .* string.(process_index)
+for i in 1:4
+    ax = Axis(fig[2, i]; title=titlelables2[i], options...)
+    heatmap!(ax, x[:], y[1:Nd2], θs[process_index[i]][:, 1:Nd2], colormap=:balance, interpolate=true)
+    contour!(ax, x[:], y[1:Nd2], θs[process_index[i]][:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
+end
 display(fig)

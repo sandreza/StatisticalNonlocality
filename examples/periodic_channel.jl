@@ -1,5 +1,5 @@
 using FFTW, LinearAlgebra, BenchmarkTools, Random, JLD2
-using StatisticalNonlocality: ou_transition_matrix, uniform_phase
+using StatisticalNonlocality: ou_transition_matrix, uniform_phase, advection_matrix_central, discrete_laplacian_periodic
 using MarkovChainHammer.TransitionMatrix: steady_state
 using StatisticalNonlocality
 using ProgressBars
@@ -10,12 +10,18 @@ using CUDA
 arraytype = Array
 Ω = S¹(2π)×S¹(2)
 N = 2^5 # number of gridpoints
-M = 4 # number of states
+M = 8 # number of states
 U = 1.0 # amplitude factor
 T = uniform_phase(M)
 γ = 1
-ω = 1
+ω = -1
 Q =  γ * (T + T')/2 + ω * (T - T')/2
+Δx = 2π / M
+φs = collect(0:M-1) * Δx
+A = advection_matrix_central(M; Δx)
+Δ = discrete_laplacian_periodic(M; Δx)
+Q = A * ω + Δ * γ
+
 p = steady_state(Q)
 Λ, V = eigen(Q)
 V[:, end] .= p
@@ -89,6 +95,7 @@ P = plan_fft!(ψ)
 P⁻¹ = plan_ifft!(ψ)
 
 # set stream function and hence velocity
+#=
 @. ψ = U * cos(kˣ[2] * x) * sin(kʸ[2] * y)
 @. ψ2 = U * sin(kˣ[2] * x) * sin(kʸ[2] * y)
 P * ψ  # in place fft
@@ -107,10 +114,13 @@ P⁻¹ * v2; # don't need ψ2 anymore
 
 us = [u, u2, -u, -u2]
 vs = [v, v2, -v, -v2]
+=#
+us = [-kʸ[2] * U * cos.(kˣ[2] * x .+ φs[i]) .* cos.(kʸ[2] .* y) for i in 1:M]
+vs = [-kˣ[2] * U * sin.(kˣ[2] * x .+ φs[i]) .* sin.(kʸ[2] .* y) for i in 1:M]
 ## timestepping
 Δx = x[2] - x[1]
-cfl = 0.1 #0.1
-advective_Δt = cfl * Δx / maximum(real.(u))
+cfl = 1.0 #0.1
+advective_Δt = cfl * Δx / maximum(real.(abs.(us[1])))
 diffusive_Δt = cfl * Δx^2 / κ
 transition_Δt = cfl / maximum(-real.(eigvals(Q)))
 Δt = min(advective_Δt, diffusive_Δt, transition_Δt)
@@ -182,13 +192,13 @@ Nd2 = floor(Int, N / 2) + 1
 fig = Figure(resolution = (2100, 1000))
 titlelables1 = ["Θ₁", "Θ₂", "Θ₃", "Θ₄"]
 options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
-for i in 1:M
+for i in 1:4
     ax = Axis(fig[1, i]; title=titlelables1[i], options...)
     heatmap!(ax, x[:], y[1:Nd2], real.(θs[i])[:, 1:Nd2], colormap=:balance, interpolate=true)
     contour!(ax, x[:], y[1:Nd2], real.(θs[i])[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
 end
 titlelables2 = ["φ₄", "φ₃", "φ₂", "⟨θ⟩"]
-for i in 1:M
+for i in 1:4
     tmp = copy(θs[1]) * V⁻¹[i, 1]
     for j in 2:M
         tmp .+= θs[j] * V⁻¹[i, j]
@@ -247,4 +257,43 @@ heatmap!(ax13, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], colormap=:balance, interpol
 contour!(ax13, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
 maximum(abs.(tmp)) / maximum(abs.(sum(θs)))
 Colorbar(fig[1, 4], limits=thetarange, colormap=:balance, flipaxis=false)
+display(fig)
+##
+# Need to run continuous case
+thetarange = (-0.1, 0.1)# extrema(real.(sum(θs)))
+fig = Figure(resolution=(2100, 1000))
+ax11 = Axis(fig[1, 1]; title="Conditional Equation Ensemble Mean", options...)
+tmp = sum(θs)
+heatmap!(ax11, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], colormap=:balance, interpolate=true, colorrange=thetarange)
+contour!(ax11, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
+
+ax12 = Axis(fig[1, 2]; title="Empirical Ensemble Mean Continuous", options...)
+tmp = field_cont
+heatmap!(ax12, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], colormap=:balance, interpolate=true, colorrange=thetarange)
+contour!(ax12, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
+
+ax13 = Axis(fig[1, 3]; title="difference", options...)
+tmp = field_cont - sum(θs)[:, 1:Nd2]
+heatmap!(ax13, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], colormap=:balance, interpolate=true, colorrange=thetarange)
+contour!(ax13, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
+maximum(abs.(tmp)) / maximum(abs.(sum(θs)))
+Colorbar(fig[1, 4], limits=thetarange, colormap=:balance, flipaxis=false)
+display(fig)
+
+##
+fig = Figure(resolution=(2100, 1000))
+titlelables1 = ["Θ₁", "Θ₂", "Θ₃", "Θ₄"]
+options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
+for i in 1:M
+    ax = Axis(fig[1, i]; title=titlelables1[i], options...)
+    heatmap!(ax, x[:], y[1:Nd2], real.(θs[i])[:, 1:Nd2], colormap=:balance, interpolate=true, colorrange = (-0.1, 0.1))
+    contour!(ax, x[:], y[1:Nd2], real.(θs[i])[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
+end
+titlelables1 = ["Empirical Θ₁", "Empirical Θ₂", "Empirical Θ₃", "Empirical Θ₄"]
+options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
+for i in 1:4
+    ax = Axis(fig[2, i]; title=titlelables1[i], options...)
+    heatmap!(ax, x[:], y[1:Nd2], cm[:, 1:Nd2, i], colormap=:balance, interpolate=true, colorrange = (-0.1, 0.1))
+    contour!(ax, x[:], y[1:Nd2], cm[:, 1:Nd2, i], color=:black, levels=10, linewidth=1.0)
+end
 display(fig)
