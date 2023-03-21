@@ -11,19 +11,7 @@ using CUDA
 arraytype = Array
 Ω = S¹(2π)×S¹(2)
 N = 2^5 # number of gridpoints
-M = 100 # number of states
-U = 1.0 # amplitude factor
-T = uniform_phase(4)
-γ = 1
-ω = 1
-Q =  γ * (T + T')/2 + ω * (T - T')/2
-p = steady_state(Q)
-Λ, V = eigen(Q)
-V[:, end] .= p
-for i in 1:4-1
-    V[:, i] .= V[:, i] ./ norm(V[:, i], 1)
-end
-V⁻¹ = inv(V)
+M = 1000
 
 grid = FourierGrid(N, Ω, arraytype=arraytype)
 nodes, wavenumbers = grid.nodes, grid.wavenumbers
@@ -107,12 +95,10 @@ P⁻¹ * v2; # don't need ψ2 anymore
 
 us = [copy(u) for i in 1:M]
 vs = [copy(v) for i in 1:M]
-us_base = [u, u2, -u, -u2]
-vs_base = [v, v2, -v, -v2]
 ## timestepping
 Δx = x[2] - x[1]
 cfl = 1.0 #0.1
-advective_Δt = cfl * Δx / maximum(real.(u))
+advective_Δt = cfl * Δx / maximum(real.(us[1]))
 diffusive_Δt = cfl * Δx^2 / κ
 transition_Δt = cfl / maximum(-real.(eigvals(Q)))
 Δt = min(advective_Δt, diffusive_Δt, transition_Δt)

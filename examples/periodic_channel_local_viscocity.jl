@@ -10,12 +10,9 @@ using CUDA
 arraytype = Array
 Ω = S¹(2π) × S¹(2)
 N = 2^5 # number of gridpoints
-M = 1 # number of states
-U = 1.0 # amplitude factor
-γ = 1
-ω = 1
 grid = FourierGrid(N, Ω, arraytype=arraytype)
 nodes, wavenumbers = grid.nodes, grid.wavenumbers
+M = 1
 
 
 
@@ -95,16 +92,16 @@ P⁻¹ * v; # don't need ψ anymore
 P⁻¹ * u2;
 P⁻¹ * v2; # don't need ψ2 anymore
 ##
-u1 = u
-v1 = v
-κxx = @. real(1 / (2(γ^2 + ω^2)) * (γ * (u1 * u1 + u2 * u2) + ω * (u1 * u2 - u2 * u1)))
-κyy = @. real(1 / (2(γ^2 + ω^2)) * (γ * (v1 * v1 + v2 * v2) + ω * (v1 * v2 - v2 * v1)))
-κyx = @. real(1 / (2(γ^2 + ω^2)) * (γ * (u1 * v1 + u2 * v2) + ω * (u1 * v2 - u2 * v1)))
-κxy = @. real(1 / (2(γ^2 + ω^2)) * (γ * (u1 * v1 + u2 * v2) + ω * (u2 * v1 - u1 * v2)))
+u1 = copy(u)
+v1 = copy(v)
+κxx = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 1, 1] # @. real(1 / (2(γ^2 + ω^2)) * (γ * (u1 * u1 + u2 * u2) + ω * (u1 * u2 - u2 * u1)))
+κyy = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 2, 2] # @. real(1 / (2(γ^2 + ω^2)) * (γ * (v1 * v1 + v2 * v2) + ω * (v1 * v2 - v2 * v1)))
+κyx = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 2, 1] # @. real(1 / (2(γ^2 + ω^2)) * (γ * (u1 * v1 + u2 * v2) + ω * (u1 * v2 - u2 * v1)))
+κxy = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 1, 2] # @. real(1 / (2(γ^2 + ω^2)) * (γ * (u1 * v1 + u2 * v2) + ω * (u2 * v1 - u1 * v2)))
 
 ## timestepping
 Δx = x[2] - x[1]
-cfl = 0.2 #0.1
+cfl = 0.1 #0.1
 eddy_diffusive_Δt = cfl * Δx^2 / maximum(abs.(κxx)) 
 diffusive_Δt = cfl * Δx^2 / κ
 transition_Δt = cfl / maximum(-real.(eigvals(Q)))

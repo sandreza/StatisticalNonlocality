@@ -3,6 +3,7 @@ using StatisticalNonlocality: ou_transition_matrix, uniform_phase
 using MarkovChainHammer.TransitionMatrix: steady_state
 using MarkovChainHammer.Trajectory: generate
 using MarkovChainHammer.Utils: autocovariance
+using Distributions
 using StatisticalNonlocality
 using ProgressBars
 rng = MersenneTwister(1234)
@@ -157,8 +158,8 @@ tend = 10.0
 iend = ceil(Int, tend / Δt)
 
 process = zeros(Float64, M, iend)
-ω = 1.0 # π/2
-ϵ = √2 # π / √8 * √2
+ω = π/2# 1.0 # π/2
+ϵ = π / √8  * √2# √2 # π / √8 * √2
 for j in 1:M
     process[j, 1] = rand(Uniform(0, 2π)) 
     for i in 2:iend

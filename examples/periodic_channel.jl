@@ -10,17 +10,15 @@ using CUDA
 arraytype = Array
 Ω = S¹(2π)×S¹(2)
 N = 2^5 # number of gridpoints
-M = 8 # number of states
+M = 6 # number of states
 U = 1.0 # amplitude factor
-T = uniform_phase(M)
-γ = 1
-ω = -1
-Q =  γ * (T + T')/2 + ω * (T - T')/2
+κ = π^2/8  # 1
+c = -π/2 # -1
 Δx = 2π / M
 φs = collect(0:M-1) * Δx
 A = advection_matrix_central(M; Δx)
 Δ = discrete_laplacian_periodic(M; Δx)
-Q = A * ω + Δ * γ
+Q = A * c + Δ * κ
 
 p = steady_state(Q)
 Λ, V = eigen(Q)
@@ -52,10 +50,6 @@ kʸ = wavenumbers[2]
 ∂ˣθ = similar(ψ)
 ∂ʸθ = similar(ψ)
 κΔθ = similar(ψ)
-u = similar(ψ)
-v = similar(ψ)
-u2 = similar(ψ)
-v2 = similar(ψ)
 θ̇s = [similar(ψ) .* 0 for i in 1:M]
 s = similar(ψ)
 θ̅ = similar(ψ)
@@ -117,9 +111,31 @@ vs = [v, v2, -v, -v2]
 =#
 us = [-kʸ[2] * U * cos.(kˣ[2] * x .+ φs[i]) .* cos.(kʸ[2] .* y) for i in 1:M]
 vs = [-kˣ[2] * U * sin.(kˣ[2] * x .+ φs[i]) .* sin.(kʸ[2] .* y) for i in 1:M]
+us_base = copy(us)
+vs_base = copy(vs)
+Q⁺ = pinv(Q)
+diag_p = Diagonal(p)
+# S⁻¹ = [1 1 1 1; 1 0 -1 0; 0 1 0 -1; 1.0 -1.0 1.0 -1.0]
+# S = inv(S⁻¹)
+# S⁻¹ * Q * S
+A_op = Q⁺ * diag_p
+obs = collect(1:M)
+obs' * A_op * obs
+local_diffusivity_tensor = zeros(size(us[1])..., 2, 2)
+for i in 1:M, j in 1:M
+    local_diffusivity_tensor[:, :, 1, 1] .+= -us[i] .* us[j] * Q⁺[i, j] * p[j]  
+    local_diffusivity_tensor[:, :, 1, 2] .+= -vs[i] .* us[j] * Q⁺[i, j] * p[j]
+    local_diffusivity_tensor[:, :, 2, 1] .+= -us[i] .* vs[j] * Q⁺[i, j] * p[j]
+    local_diffusivity_tensor[:, :, 2, 2] .+= -vs[i] .* vs[j] * Q⁺[i, j] * p[j]
+end
+local_diffusivity_tensor[:, :, 1, 1]
+ω = 1
+γ = 1
+inv([γ ω; -ω γ])
+tmpdif = @. real(1 / (2(γ^2 + ω^2)) * (γ * (us[1] * us[1] + us[4] * us[4]) + ω * (us[1] * us[4] - us[4] * us[1])))
 ## timestepping
 Δx = x[2] - x[1]
-cfl = 1.0 #0.1
+cfl = 1.0
 advective_Δt = cfl * Δx / maximum(real.(abs.(us[1])))
 diffusive_Δt = cfl * Δx^2 / κ
 transition_Δt = cfl / maximum(-real.(eigvals(Q)))
@@ -274,6 +290,7 @@ contour!(ax12, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], color=:black, levels=10, li
 
 ax13 = Axis(fig[1, 3]; title="difference", options...)
 tmp = field_cont - sum(θs)[:, 1:Nd2]
+println("the maximum error is ", maximum(abs.(tmp)))
 heatmap!(ax13, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], colormap=:balance, interpolate=true, colorrange=thetarange)
 contour!(ax13, x[:], y[1:Nd2], real.(tmp)[:, 1:Nd2], color=:black, levels=10, linewidth=1.0)
 maximum(abs.(tmp)) / maximum(abs.(sum(θs)))
