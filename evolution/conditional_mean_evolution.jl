@@ -68,3 +68,31 @@ function n_state_rhs_symmetric_ensemble!(θ̇s, θs, simulation_parameters)
 
     return nothing
 end
+
+
+function n_state_rhs_local!(θ̇s, θs, simulation_parameters)
+    (; κxx, κxy, κyx, κyy, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ) = simulation_parameters
+    θ̇ = θ̇s[1]
+    θ = θs[1]
+    # dynamics
+    P * θ # in place fft
+    # ∇θ
+    @. ∂ˣθ = ∂x * θ
+    @. ∂ʸθ = ∂y * θ
+    # κΔθ
+    @. κΔθ = κ * Δ * θ
+    # go back to real space 
+    [P⁻¹ * field for field in (θ, ∂ˣθ, ∂ʸθ, κΔθ)] # in place ifft
+    # compute u * θ and v * θ take derivative and come back
+    @. uθ = κxx * ∂ˣθ + κxy * ∂ʸθ
+    @. vθ = κyx * ∂ˣθ + κyy * ∂ʸθ
+    P * uθ
+    P * vθ
+    @. ∂ˣuθ = ∂x * uθ
+    @. ∂ʸvθ = ∂y * vθ
+    # go back to real space 
+    [P⁻¹ * field for field in (∂ˣuθ, ∂ʸvθ)] # in place ifft
+    # compute θ̇ in real space
+    @. θ̇ = ∂ˣuθ + ∂ʸvθ + κΔθ + s
+    return nothing
+end
