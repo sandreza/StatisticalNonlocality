@@ -15,13 +15,15 @@ N = 2^5 # number of gridpoints
 M = 10000  # number of states
 c = -1.0
 ϵ = 1.0
-U = 2.0
+U = 1.0
 tend = 10.0
+cfl = minimum([U, 1.0])
 
 ## Continuous Case
 (; ψ, x, y, kˣ, kʸ, θs, us, vs, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ, θ̇s, θ̅, k₁, k₂, k₃, k₄, θ̃, Δt) = continuous_channel(N, M; c=c, ϵ=ϵ, U = U)
 rhs! = n_state_rhs_symmetric_ensemble!
 simulation_parameters = (; us, vs, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ)
+Δt = cfl * Δt
 iend = ceil(Int, tend / Δt)
 process = periodic_drift(c, ϵ, Δt, M, iend)
 # runge kutta 4 timestepping
@@ -42,7 +44,7 @@ empirical_θs = copy(θs)
 sampling_error = norm(mean(empirical_θs[1:floor(Int, M / 2)]) - mean(empirical_θs[floor(Int, M / 2)+1:end])) / norm(empirical_ensemble_mean) * 100
 
 println("maximum value of theta after ", maximum(empirical_ensemble_mean))
-println("The sampling error is ", sampling_error)
+println("The sampling error is ", sampling_error, " percent")
 ## N-State Case
 Ms = collect(4:16)
 maxerror = zeros(length(Ms))
@@ -51,7 +53,7 @@ nstate_ensemble_means = zeros(N, N, length(Ms))
 for (j,M) in ProgressBar(enumerate(Ms))
     (; θs, p, Q, us, vs, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ, θ̇s, θ̅, k₁, k₂, k₃, k₄, θ̃, local_diffusivity_tensor, Δt) = nstate_channel(N, M; c=c, ϵ=ϵ, U = U)
     simulation_parameters = (; p, Q, us, vs, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ)
-    Δt = Δt
+    Δt = cfl * Δt
     ## Timestep 
     rhs! = n_state_rhs_symmetric!
     iend = ceil(Int, tend / Δt)
@@ -83,10 +85,11 @@ Nstates = 100 # for local diffusivity estimate
 κyy = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 2, 2] 
 κyx = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 2, 1] 
 κxy = 0.0 .+ 1 * local_diffusivity_tensor[:, :, 1, 2]
+# scatter(mean(real.(ifft(∂y .* fft(κyx))), dims = 1)[:])
 (; θs, p, Q, us, vs, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ, θ̇s, θ̅, k₁, k₂, k₃, k₄, θ̃, local_diffusivity_tensor, Δt) = nstate_channel(N, M; c=c, ϵ=ϵ, U = U)
 simulation_parameters = (; κxx, κxy, κyx, κyy, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ)
 ## Timestep 
-Δt_local = 0.01 * Δt
+Δt_local = cfl * 0.01 * Δt
 rhs! = n_state_rhs_symmetric!
 iend = ceil(Int, tend / Δt_local)
 rhs! = n_state_rhs_local!
@@ -112,14 +115,16 @@ ax11 = Axis(error_fig[1, 1]; title = "Relative L2 Error", xlabel="Number of Stat
 scatter!(ax11, Ms, l2error; markersize=30, color=:black, label="N-State Model")
 hlines!(ax11, [sampling_error], color=:red, linewidth=10, linestyle = :dash, label = "Sampling Error")
 hlines!(ax11, [local_error], color=:orange, linewidth=10, linestyle=:dash, label="Local Diffusivity Error")
-ylims!(ax11, (0, 80))
+ylims!(ax11, (0, 50))
 ax11.xticks = (collect(Ms), string.(collect(Ms)))
-axislegend(ax11, position=:rt, framecolor=(:grey, 0.5), patchsize=(40, 40), markersize=40, labelsize=50)
+axislegend(ax11, position=:rc, framecolor=(:grey, 0.5), patchsize=(40, 40), markersize=40, labelsize=50)
 display(error_fig)
+##
+save("data/ensemble_mean_channel_error.png", error_fig)
 ##
 Nd2 = floor(Int, N / 2) + 1
 fig = Figure(resolution=(2100, 1000))
-titlelables1 = ["N = $(Ms[end]) State"]
+titlelables1 = ["N = $(Ms[end]) State Ensemble Mean"]
 options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
 mth = maximum(nstate_ensemble_means)
 colorrange = (-mth, mth)
@@ -128,17 +133,26 @@ index_choice = length(Ms)
 field_cont = nstate_ensemble_means[:, 1:Nd2, index_choice]
 heatmap!(ax, x[:], y[1:Nd2], field_cont, colormap=:balance, interpolate=true, colorrange = colorrange)
 contour!(ax, x[:], y[1:Nd2], field_cont, color=:black, levels=10, linewidth=1.0)
-ax = Axis(fig[1, 2]; title="Empirical with 10000 Ensemble Members", options...)
+ax = Axis(fig[1, 2]; title="Continuous Empirical Ensemble Mean", options...)
 field_tmp = empirical_ensemble_mean[:, 1:Nd2]
 heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange = colorrange)
 contour!(ax, x[:], y[1:Nd2], field_tmp, color=:black, levels=10, linewidth=1.0)
-ax = Axis(fig[2, 2]; title="Local Diffusivity", options...)
+ax = Axis(fig[2, 2]; title="Local Diffusivity Ensemble Mean", options...)
 field_tmp = nstate_ensemble_mean_local[:, 1:Nd2]
 heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange=colorrange)
 contour!(ax, x[:], y[1:Nd2], field_tmp, color=:black, levels=10, linewidth=1.0)
+#=
 ax = Axis(fig[2, 1]; title="NState - Empirical", options...)
 field_tmp = empirical_ensemble_mean[:, 1:Nd2] - nstate_ensemble_means[:, 1:Nd2, index_choice]
 heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange = colorrange)
 contour!(ax, x[:], y[1:Nd2], field_tmp, color=:black, levels=10, linewidth=1.0)
+=#
+ax = Axis(fig[2, 1]; title="Source x 0.1", options...)
+field_tmp = s[:, 1:Nd2] * 0.1
+heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange=colorrange)
+contour!(ax, x[:], y[1:Nd2], field_tmp, color=:black, levels=10, linewidth=1.0)
+
 Colorbar(fig[1:2, 3]; limits=colorrange, colormap=:balance, flipaxis=false, ticklabelsize = 30)
 display(fig)
+##
+save("data/ensemble_mean_channel_comparison.png", fig)

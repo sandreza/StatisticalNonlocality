@@ -32,7 +32,7 @@ function nstate_channel(N, M; U=1.0, ϵ = π / sqrt(8), c= -π / 2, source_index
     ## Allocate Fields with specific values
     [us[i] .= -kʸ[2] * U * cos.(kˣ[2] * x .+ φs[i]) .* cos.(kʸ[2] .* y) for i in 1:M]
     [vs[i] .= -kˣ[2] * U * sin.(kˣ[2] * x .+ φs[i]) .* sin.(kʸ[2] .* y) for i in 1:M]
-    @. s = sin(kˣ[source_index] * x) * sin(kʸ[source_index] * y) 
+    @. s = sin(kˣ[2] * x) * sin(kʸ[source_index] * y) + cos(kˣ[3] * x) * sin(kʸ[source_index] * y)
 
     ## Set Initial Theta Equal to Diffusive Solution
     tmp = (kˣ[source_index]^2 + kʸ[source_index]^2)

@@ -49,7 +49,7 @@ function continuous_channel(N, M; U=1.0, ϵ=π / sqrt(8), c=-π / 2, source_inde
     ## Allocate Fields with specific values
     [us[i] .= -kʸ[2] * U * cos.(kˣ[2] * x .+ rand(Uniform(0, 2π))) .* cos.(kʸ[2] .* y) for i in 1:M]
     [vs[i] .= -kˣ[2] * U * sin.(kˣ[2] * x .+ rand(Uniform(0, 2π))) .* sin.(kʸ[2] .* y) for i in 1:M]
-    @. s = sin(kˣ[source_index] * x) * sin(kʸ[source_index] * y)
+    @. s = sin(kˣ[2] * x) * sin(kʸ[source_index] * y) + cos(kˣ[3] * x) * sin(kʸ[source_index] * y)
 
     ## Set Initial Theta Equal to Diffusive Solution
     tmp = (kˣ[source_index]^2 + kʸ[source_index]^2)
