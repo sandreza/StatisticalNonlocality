@@ -185,7 +185,6 @@ end
 n_state_rhs_symmetric!(θ̇s, θs, simulation_parameters)
 
 rhs! = n_state_rhs_symmetric!
-
 tend = 10.0
 iend = ceil(Int, tend / Δt)
 
