@@ -82,19 +82,21 @@ end
 
 function nstate_ou_process(Q, uₘ, Δt, M, iend)
     process = zeros(Float64, M, iend)
+    process_index = zeros(Int64, M, iend)
     for j in 1:M
         markov_chain = generate(exp(Q * Δt), iend)
+        process_index[j, :] .= markov_chain
         for i in 1:iend
             process[j, i] = uₘ[markov_chain[i]]
         end
     end
-    return process
+    return process, process_index
 end
 
-function update_ou_flow_field!(us, vs, ψ, process_n, x, y, kˣ, kʸ, ∂y, ∂x, P, P⁻¹, U)
+function update_ou_flow_field!(us, vs, ψ, process_n, x, y, kˣ, kʸ, ∂y, ∂x, P, P⁻¹)
     for i in eachindex(process_n)
         a = process_n[i]
-        @. ψ = a * sin(kˣ[2] * x) * sin(kʸ[2] * y)
+        @. ψ = a * cos(kˣ[2] * x) * cos(kʸ[2] * y)
         P * ψ  # in place fft
         @. us[i] = -1.0 * (∂y * ψ)
         @. vs[i] = (∂x * ψ)
