@@ -1,9 +1,8 @@
-include("n_state.jl")
+include("n_state_ou.jl")
 include("stochastic_advection.jl")
 
 ##
 using GLMakie
-
 keffs = Vector{Float64}[]
 Ms = 0:7
 Ns = [1, 2, 3, 4, 14]

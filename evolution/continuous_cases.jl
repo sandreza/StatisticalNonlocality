@@ -67,3 +67,38 @@ function continuous_channel(N, M; U=1.0, ϵ=π / sqrt(8), c=-π / 2, source_inde
 
     return (; ψ, x, y, kˣ, kʸ, θs, us, vs, ∂ˣθ, ∂ʸθ, uθ, vθ, ∂ˣuθ, ∂ʸvθ, s, P, P⁻¹, ∂x, ∂y, κ, Δ, κΔθ, θ̇s, θ̅, k₁, k₂, k₃, k₄, θ̃, Δt)
 end
+
+
+function ou_process(γ, ϵ, Δt, M, iend)
+    process = zeros(Float64, M, iend)
+    for j in 1:M
+        process[j, 1] = randn()
+        for i in 2:iend
+            process[j, i] = process[j, i-1] * (1-γ * Δt) + ϵ * randn() * sqrt(Δt)
+        end
+    end
+    return process
+end
+
+function nstate_ou_process(Q, uₘ, Δt, M, iend)
+    process = zeros(Float64, M, iend)
+    for j in 1:M
+        markov_chain = generate(exp(Q * Δt), iend)
+        for i in 1:iend
+            process[j, i] = uₘ[markov_chain[i]]
+        end
+    end
+    return process
+end
+
+function update_ou_flow_field!(us, vs, ψ, process_n, x, y, kˣ, kʸ, ∂y, ∂x, P, P⁻¹, U)
+    for i in eachindex(process_n)
+        a = process_n[i]
+        @. ψ = a * sin(kˣ[2] * x) * sin(kʸ[2] * y)
+        P * ψ  # in place fft
+        @. us[i] = -1.0 * (∂y * ψ)
+        @. vs[i] = (∂x * ψ)
+        P⁻¹ * us[i]
+        P⁻¹ * vs[i]
+    end
+end
