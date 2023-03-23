@@ -31,7 +31,8 @@ colorrange = (-4.0, 4.0)
 contourlevels = range(-4.0, 4.0, 20)
 ax1 = Axis(fig[1, index_choice]; title="⟨θ⟩ : Empirical", options...)
 field_cont = sum(Θⁱ, dims=3)[:, :, 1]
-colormap = :balance # :diverging_bwr_20_95_c54_n256 # :diverging_tritanopic_cwr_75_98_c20_n256  # :balance # :diverging_tritanopic_cwr_75_98_c20_n256 
+# :curl, :delta, :diverging_tritanopic_cwr_75_98_c20_n256, :diverging_tritanopic_cwr_75_98_c20_n256 
+colormap = :balance
 heatmap!(ax1, x[:], y[:], field_cont, colormap=colormap, interpolate=true, colorrange=colorrange)
 contour!(ax1, x[:], y[:], field_cont, color=:black, levels=contourlevels, linewidth=1.0)
 ax2 = Axis(fig[2, index_choice]; title="⟨θ⟩ : Equations", options...)
@@ -42,7 +43,7 @@ Colorbar(fig[1:2, 6]; limits=colorrange, colormap=colormap, flipaxis=false, tick
 
 index_choice = 7
 colorrange = (-1,1)
-colormap = :balance # :diverging_bwr_40_95_c42_n256 # :balance # :diverging_protanopic_deuteranopic_bwy_60_95_c32_n256
+colormap = :balance
 ax1 = Axis(fig[1, index_choice]; title="Stream Function", options...)
 heatmap!(ax1, x[:], y[:], stream_function, colormap=colormap, interpolate=true, colorrange=colorrange)
 contour!(ax1, x[:], y[:], stream_function, color=:black, levels=10, linewidth=1.0)
