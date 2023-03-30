@@ -104,4 +104,4 @@ hfile["uₘ"] = uₘ
 hfile["source"] = real.(s)
 hfile["stream function"] = stream_function
 close(hfile)
-@info "done saving data for Lorenz"
+@info "done saving data for ou"

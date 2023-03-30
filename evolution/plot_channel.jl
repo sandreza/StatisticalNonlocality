@@ -1,6 +1,19 @@
-hfile = h5open("channel.hdf5")
+using HDF5, GLMakie
+@info "opening channel file"
+hfile = h5open(pwd() * "/data/channel.hdf5", "r")
+l2error = read(hfile["l2 error"])
+sampling_error = read(hfile["sampling error"])
+local_error = read(hfile["local error"])
+Ms = read(hfile["Ms"])
+nstate_ensemble_means = read(hfile["equations"])
+empirical_ensemble_mean = read(hfile["empirical"])
+x = read(hfile["x"])[:]
+y = read(hfile["y"])[:]
+s = read(hfile["source"])
+nstate_ensemble_mean_local = read(hfile["local"])
+close(hfile)
 
-
+##
 using GLMakie
 error_fig = Figure(resolution=(1612, 1180))
 options = (; titlesize=30, xlabelsize=40, ylabelsize=40, xticklabelsize=40, yticklabelsize=40)
@@ -15,6 +28,7 @@ display(error_fig)
 ##
 save("data/ensemble_mean_channel_error.png", error_fig)
 ##
+N = length(x)
 Nd2 = floor(Int, N / 2) + 1
 fig = Figure(resolution=(2100, 1000))
 titlelables1 = ["N = $(Ms[end]) State Ensemble Mean"]
@@ -34,12 +48,6 @@ ax = Axis(fig[2, 2]; title="Local Diffusivity Ensemble Mean", options...)
 field_tmp = nstate_ensemble_mean_local[:, 1:Nd2]
 heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange=colorrange)
 contour!(ax, x[:], y[1:Nd2], field_tmp, color=:black, levels=10, linewidth=1.0)
-#=
-ax = Axis(fig[2, 1]; title="NState - Empirical", options...)
-field_tmp = empirical_ensemble_mean[:, 1:Nd2] - nstate_ensemble_means[:, 1:Nd2, index_choice]
-heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange = colorrange)
-contour!(ax, x[:], y[1:Nd2], field_tmp, color=:black, levels=10, linewidth=1.0)
-=#
 ax = Axis(fig[2, 1]; title="Source x 0.1", options...)
 field_tmp = s[:, 1:Nd2] * 0.1
 heatmap!(ax, x[:], y[1:Nd2], field_tmp, colormap=:balance, interpolate=true, colorrange=colorrange)
@@ -49,3 +57,4 @@ Colorbar(fig[1:2, 3]; limits=colorrange, colormap=:balance, flipaxis=false, tick
 display(fig)
 ##
 save("data/ensemble_mean_channel_comparison.png", fig)
+@info "done creating plots"

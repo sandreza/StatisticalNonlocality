@@ -1,16 +1,20 @@
-include("n_state_ou.jl")
-include("stochastic_advection.jl")
 
-##
-using GLMakie
+hfile = h5open(pwd() * "/data/comparison.hdf5", "r")
+keff1 = hfile["keff1"][:]
+
+include("n_state_ou.jl")
+@info "Recomputing exact fluxes for n-state models"
 keffs = Vector{Float64}[]
 Ms = 0:7
 Ns = [1, 2, 3, 4, 14]
 for N in Ns
-    keff = n_state_keff(N; Ms = Ms)
+    keff = n_state_keff(N; Ms=Ms)
     push!(keffs, keff)
 end
-
+@info "Done"
+##
+@info "plotting"
+using GLMakie
 Nlabels = ["N = $(Ns[1]+1)", "N = $(Ns[2]+1)", "N = $(Ns[3]+1)", "N = $(Ns[4]+1)", "N = $(Ns[end]+1)"]
 color_choices = [(:red, 0.5), (:blue, 0.5), (:green, 0.5), (:orange, 0.5), (:black, 0.5)]
 ##
@@ -51,7 +55,7 @@ color_choices = [(:red, 0.5), (:blue, 0.5), (:green, 0.5), (:orange, 0.5), (:bla
 
 Ns = (length(kernels[1]))
 Ω = S¹(2π)
-grid = FourierGrid(Ns, Ω, arraytype=ArrayType)
+grid = FourierGrid(Ns, Ω, arraytype=Array)
 nodes, wavenumbers = grid.nodes, grid.wavenumbers
 Δx = nodes[1][2] - nodes[1][1]
 
@@ -68,3 +72,4 @@ end
 display(fig)
 ##
 save("data/kernels.png", fig)
+@info "done plotting"

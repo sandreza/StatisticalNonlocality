@@ -4,7 +4,7 @@ x = read(hfile["x"])
 y = read(hfile["y"])
 Θⁱ = read(hfile["empirical"])
 Θₘ = read(hfile["equations"])
-ψ = read(hfile["stream function"])
+stream_function = read(hfile["stream function"])
 s = read(hfile["source"])
 close(hfile)
 ##

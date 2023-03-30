@@ -121,3 +121,12 @@ keff1 = @. (1 / ensemble_mean - κ * kˣ^2) / kˣ^2
 keff2 = @. flux / (ensemble_mean * kˣ)
 keff1 = keff1[2:floor(Int, Ns[1] / 2)]
 keff2 = keff2[2:floor(Int, Ns[1] / 2)]
+## Save 
+@info "saving data for 1D OU"
+hfile = h5open(pwd() * "/data/comparison.hdf5", "w")
+hfile["keff1"] = keff1
+hfile["keff2"] = keff2
+hfile["flux"] = flux
+hfile["ensemble_mean"] = ensemble_mean
+hfile["kx"] = kˣ
+close(hfile)

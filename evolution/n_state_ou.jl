@@ -7,7 +7,7 @@ k = 1.0 # wavenumber
 γ = 1.0 # ou relaxation: default = 1.0
 ϵ = sqrt(2) # noise strength: default = √2
 
-N = 3 # number of markov states - 1, numerically unstable for large N
+N = 4 # number of markov states - 1, numerically unstable for large N
 
 # construct markov approximation 
 Δx = 2 / √N
@@ -50,7 +50,7 @@ end
 dl = reverse([1.0 * n for n in 1:N])
 du = [1.0 for n in 1:N]
 d = zeros(N + 1)
-Uₕ = 1 / sqrt(γ * 2 / ϵ^2) .* Tridiagonal(dl, d, du) # Hermite Polynomial U, position operator in spectral space
+Uₕ = 1 / sqrt(γ * 2 / ϵ^2) .* Tridiagonal(dl, d, du)' # Hermite Polynomial U, position operator in spectral space
 
 ll, vv = eigen(Array(Uₕ)) # nodal positions
 QH = vv * Diagonal(Λ) * inv(vv) # nodal space matrix

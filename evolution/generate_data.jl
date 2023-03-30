@@ -11,3 +11,10 @@ if isfile(pwd() * "/data/channel.hdf5")
 else
     include("run_channel_case.jl")
 end
+
+if isfile(pwd * "/data/comparison.hdf5")
+    @info "ou_comparison data already exists"
+else
+    include("n_state_ou.jl")
+    include("stochastic_advection.jl")
+end
