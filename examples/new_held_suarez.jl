@@ -1,4 +1,4 @@
-using HDF5, GLMakie
+using HDF5, GLMakie, LinearAlgebra, ProgressBars, MarkovChainHammer
 filename = "even_high_rez_hs.h5"
 fid = h5open(filename, "r")
 θlist = read(fid["grid"]["θlist"])
@@ -41,38 +41,49 @@ surface!(ax_v, x, y, z, color=@lift(v_timeseries[$time_index]), colormap=:balanc
 surface!(ax_rho, x, y, z, color=@lift(rho_timeseries[$time_index]), colormap=:bone_1, colorrange=(1.06, 1.2), shading=false)
 display(fig)
 ##
-framerate = 3 * 30
-timestamps = 1:length(T_timeseries)
-
-record(fig, "time_animation_hs.mp4", timestamps;
-    framerate=framerate) do t
-    time_index[] = t
+snapshots = [T_timeseries[i] for i in [2000, 4000, 6000, 8000]]
+markov_embedding = zeros(Int, length(T_timeseries))
+for i in ProgressBar(eachindex(markov_embedding))
+    markov_embedding[i] = argmin([norm(snapshot .- T_timeseries[i]) for snapshot in snapshots])
 end
+##
+using MarkovChainHammer.TransitionMatrix: perron_frobenius, generator
+perron_frobenius(markov_embedding)
+Q = generator(markov_embedding; dt = 0.003) 
 
 ##
-fig = Figure()
+kwargs = (; title = "Embedding", titlesize=40, ylabelsize=40, xgridstyle=:dash, ygridstyle=:dash, xtickalign=1,
+    xticksize=20, ytickalign=1, yticksize=20, xticklabelsize=40, yticklabelsize=40)
+fig = Figure(resolution=(2400, 1070))
 ax_u = LScene(fig[1, 1], show_axis=false)
 ax_state = LScene(fig[1, 2], show_axis=false)
-time_slider = Slider(fig[2, 1:2], range=1:length(T_timeseries), startvalue=1, horizontal=true)
+ax_embedding = Axis(fig[1, 3]; kwargs...)
+last_ind = 2000-1
+time_slider = Slider(fig[2, 1:3], range=1:last_ind, startvalue=1, horizontal=true)
 time_index = time_slider.value
-surface!(ax_u, x, y, z, color=@lift(u_timeseries[$time_index]), colormap=:balance, colorrange=(-30, 30), shading=false)
-surface!(ax_state, x, y, z, color=@lift(snapshots[cstate[$time_index]]), colormap=:balance, colorrange=(-30, 30), shading=false)
+colorrange = extrema(T_timeseries[1])
+surface!(ax_u, x, y, z, color=@lift(T_timeseries[$time_index]), colormap=:afmhot, colorrange=colorrange, shading=false)
+surface!(ax_state, x, y, z, color=@lift(snapshots[markov_embedding[$time_index]]), colormap=:afmhot, colorrange=colorrange, shading=false)
+xlims!(ax_embedding, (1, last_ind))
+ylims!(ax_embedding, (0.5, 4.5))
+ax_embedding.yticks = ([1, 2, 3, 4], ["1", "2", "3", "4"])
+ys = @lift(markov_embedding[1:$time_index])
+scatter!(ax_embedding, ys, color=:black, markersize=20)
 
+
+display(fig)
 framerate = 3 * 30
-timestamps = 1:length(T_timeseries)
-
-record(fig, "time_animation_hs_markov.mp4", timestamps;
+timestamps = 1:last_ind
+##
+record(fig, "time_animation_hs_markov_brown.mp4", timestamps;
     framerate=framerate) do t
     time_index[] = t
 end
 
 ##
-fig = Figure()
-ax_11 = LScene(fig[1, 1], show_axis=false)
-ax_12 = LScene(fig[1, 2], show_axis=false)
-ax_21 = LScene(fig[2, 1], show_axis=false)
-ax_22 = LScene(fig[2, 2], show_axis=false)
-surface!(ax_11, x, y, z, color=snapshots[1], colormap=:balance, colorrange=(-30, 30), shading=false)
-surface!(ax_12, x, y, z, color=snapshots[2], colormap=:balance, colorrange=(-30, 30), shading=false)
-surface!(ax_21, x, y, z, color=snapshots[3], colormap=:balance, colorrange=(-30, 30), shading=false)
-surface!(ax_22, x, y, z, color=snapshots[4], colormap=:balance, colorrange=(-30, 30), shading=false)
+fig = Figure(resolution=(2802, 886))
+for i in 1:4
+    ax = LScene(fig[1, i]; show_axis=false)
+    surface!(ax, x, y, z, color=snapshots[i], colormap=:afmhot, colorrange=colorrange, shading=false)
+end
+display(fig)
