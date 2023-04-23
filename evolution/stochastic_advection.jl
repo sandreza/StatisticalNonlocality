@@ -125,6 +125,7 @@ keff2 = @. flux / (ensemble_mean * kˣ)
 keff1 = keff1[2:floor(Int, Ns[1] / 2)]
 keff2 = keff2[2:floor(Int, Ns[1] / 2)]
 println("The relative error is ", norm(keff1 - keff2) / norm(keff1) * 100, "%")
+println("The final timestep is ", 212 * dt)
 ## Save 
 @info "saving data for 1D OU"
 hfile = h5open(pwd() * "/data/comparison.hdf5", "w")
