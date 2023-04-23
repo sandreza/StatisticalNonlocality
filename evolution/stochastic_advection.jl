@@ -6,7 +6,7 @@ ArrayType = Array
 rng = MersenneTwister(12345)
 Random.seed!(12)
 
-Ns = (16, 1024 * 2)
+Ns = (16, 10^6)
 Ω = S¹(2π) × S¹(1)
 
 grid = FourierGrid(Ns, Ω, arraytype=ArrayType)
@@ -102,8 +102,8 @@ us = Vector{Float64}[]
 uθs = Vector{Float64}[]
 θs = Vector{Float64}[]
 rng = MersenneTwister(12345)
-fluxstart = 10000
-iterations = 3 * 20000
+fluxstart = 100  # 10000
+iterations = 212 # 3 * 20000
 for i in ProgressBar(1:iterations)
     step!(θ, u, rng)
     if (i > fluxstart) & (i % 1 == 0)
@@ -114,13 +114,17 @@ for i in ProgressBar(1:iterations)
     end
 end
 
-flux = mean(uθs) / Ns[1] * 2
-ensemble_mean = mean(θs) / Ns[1] * 2
+flux =  uθs[end] / Ns[1] * 2 # mean(uθs) / Ns[1] * 2
+ensemble_mean = θs[end] / Ns[1] * 2 # mean(θs) / Ns[1] * 2
+
+#(flux - uθs[end] /  Ns[1] * 2) ./ flux
+# (ensemble_mean - θs[end] / Ns[1] * 2) ./ ensemble_mean * 100
 
 keff1 = @. (1 / ensemble_mean - κ * kˣ^2) / kˣ^2
 keff2 = @. flux / (ensemble_mean * kˣ)
 keff1 = keff1[2:floor(Int, Ns[1] / 2)]
 keff2 = keff2[2:floor(Int, Ns[1] / 2)]
+println("The relative error is ", norm(keff1 - keff2) / norm(keff1) * 100, "%")
 ## Save 
 @info "saving data for 1D OU"
 hfile = h5open(pwd() * "/data/comparison.hdf5", "w")
