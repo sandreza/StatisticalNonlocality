@@ -9,9 +9,9 @@ for file in files
     println("-----")
     tic = Base.time()
     fig = file_kernel_plot(file * ".jld2")
-    save("data/" * file * "_kernel.png", fig)
+    save("data/" * file * "_kernel.eps", fig)
     fig = file_local_diffusivity_plot(file * ".jld2")
-    save("data/" * file * "_local_diffusivity.png", fig)
+    save("data/" * file * "_local_diffusivity.eps", fig)
     toc = Base.time()
 
     global total_time += toc - tic

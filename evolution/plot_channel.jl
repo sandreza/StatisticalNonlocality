@@ -1,5 +1,3 @@
-using HDF5, GLMakie, StatisticalNonlocality
-using FFTW
 @info "opening channel file"
 hfile = h5open(pwd() * "/data/channel.hdf5", "r")
 l2error = read(hfile["l2 error"])
@@ -14,8 +12,6 @@ s = read(hfile["source"])
 nstate_ensemble_mean_local = read(hfile["local"])
 close(hfile)
 
-##
-using GLMakie
 error_fig = Figure(resolution=(1612, 1180))
 options = (; titlesize=30, xlabelsize=40, ylabelsize=40, xticklabelsize=40, yticklabelsize=40)
 ax11 = Axis(error_fig[1, 1]; title="Relative L2 Error", xlabel="Number of States", ylabel="L2 Error (%)", options...)
@@ -27,7 +23,7 @@ ax11.xticks = (collect(Ms), string.(collect(Ms)))
 axislegend(ax11, position=:rc, framecolor=(:grey, 0.5), patchsize=(40, 40), markersize=40, labelsize=50)
 display(error_fig)
 ##
-save("data/ensemble_mean_channel_error.png", error_fig)
+save("data/fig6.eps", error_fig)
 ## 
 # Interpolate field
 Mnew = 256
@@ -79,5 +75,5 @@ contour!(ax, x[:], y[1:Nd2], field_tmp3[:, 1:Nd2], color=:black, levels=10, line
 Colorbar(fig[1:2, 3]; limits=colorrange, colormap=:balance, flipaxis=false, ticklabelsize=30)
 display(fig)
 ##
-save("data/ensemble_mean_channel_comparison.png", fig)
+save("data/fig5.eps", fig)
 @info "done creating plots"

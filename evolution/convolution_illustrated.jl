@@ -57,5 +57,5 @@ xlims!(ax12, -0.7, 1.1)
 ylims!(ax12, -0.4, 0.0)
 display(fig)
 ##
-save("data/convolution_illustrated.png", fig)
+save("data/fig3.eps", fig)
 @info "done with convolution plot"

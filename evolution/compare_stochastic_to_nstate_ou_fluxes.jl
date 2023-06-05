@@ -14,7 +14,6 @@ end
 @info "Done"
 ##
 @info "plotting"
-using GLMakie
 Nlabels = ["N = $(Ns[1]+1)", "N = $(Ns[2]+1)", "N = $(Ns[3]+1)", "N = $(Ns[4]+1)", "N = $(Ns[end]+1)"]
 color_choices = [(:red, 0.5), (:blue, 0.5), (:green, 0.5), (:orange, 0.5), (:black, 0.5)]
 ##
@@ -36,7 +35,7 @@ axislegend(ax, position=:lb, framecolor=(:grey, 0.5), patchsize=(20, 20), marker
 display(fig)
 (keffs[end][2:end] - keff1) ./ keff1 * 100
 ##
-save("data/wavenumber_diffusivities.png", fig)
+save("data/fig1.eps", fig)
 ##
 # kernels 
 kernels = Vector{Float64}[]
@@ -71,5 +70,5 @@ for i in 1:4
 end
 display(fig)
 ##
-save("data/kernels.png", fig)
+save("data/fig2.eps", fig)
 @info "done plotting"

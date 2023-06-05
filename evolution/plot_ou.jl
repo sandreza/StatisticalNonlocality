@@ -55,4 +55,35 @@ Colorbar(fig[1:2, 8]; limits=colorrange, colormap=colormap, flipaxis=false, tick
 
 display(fig)
 ##
-save(pwd() * "/data/3_state_ou.png", fig)
+save(pwd() * "/data/fig4.eps", fig)
+
+##
+fig2 = Figure(resolution= (1200,1000))
+field_tmp = sum(Θₘ, dims=3)[:, :, 1]
+
+colorrange = (-4.0/3, 4.0/3)
+contourlevels = range(-4.0/3, 4.0/3, 20)
+for index_choice in 1:2
+    ax1 = Axis(fig2[1, index_choice])
+    field_cont = Θⁱ[:, :, index_choice]
+    heatmap!(ax1, x[:], y[:], field_cont, colormap=:balance, interpolate=true, colorrange=colorrange)
+    contour!(ax1, x[:], y[:], field_cont, color=:black, levels=contourlevels, linewidth=1.0)
+    hidedecorations!(ax1)  # hides ticks, grid and lables
+    hidespines!(ax1)  # hide the frame
+end
+ax1 = Axis(fig2[2, 1])
+field_cont = Θⁱ[:, :, 3]
+heatmap!(ax1, x[:], y[:], field_cont, colormap=:balance, interpolate=true, colorrange=colorrange)
+contour!(ax1, x[:], y[:], field_cont, color=:black, levels=contourlevels, linewidth=1.0)
+hidedecorations!(ax1)  # hides ticks, grid and lables
+hidespines!(ax1)  # hide the frame
+ax = Axis(fig2[2,2])
+colorrange = (-4.0, 4.0)
+contourlevels = range(-4.0, 4.0, 20)
+heatmap!(ax, field_tmp, colormap=colormap, interpolate=true, colorrange=colorrange)
+contour!(ax, field_tmp, color=:black, levels=contourlevels, linewidth=1.0)
+hidedecorations!(ax)  # hides ticks, grid and lables
+hidespines!(ax)  # hide the frame
+display(fig2)
+
+save(pwd() * "/data/graphical_abstract.eps", fig2)

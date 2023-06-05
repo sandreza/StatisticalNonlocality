@@ -28,9 +28,9 @@ for k in ProgressBar(1:7)
     push!(keff, 𝒦ₘ)
 end
 ##
-function n_state_keff(N; Ms = 1:7, κ = 0.01, λ = 0.0, γ = 1.0, ϵ = √2)
+function n_state_keff(N; Ms = 1:7, κ = 0.01, λ = 0.0, γ = 1.0, ϵ = √2, U = 1.0)
     Δx = 2 / √N
-    uₘ = 1 / sqrt(γ * 2 / ϵ^2) * [Δx * (i - N / 2) for i in 0:N]
+    uₘ = 1 / sqrt(γ * 2 / ϵ^2) * [Δx * (i - N / 2) for i in 0:N] * U
     Q = ou_transition_matrix(N) .* γ
     Λ, V = eigen(Q)
     V⁻¹ = inv(V)

@@ -1,5 +1,6 @@
 using HDF5
-using GLMakie
+# using GLMakie
+using CairoMakie
 using StatisticalNonlocality
 using FFTW
 include("plot_ou.jl")
