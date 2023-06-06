@@ -86,4 +86,4 @@ hidedecorations!(ax)  # hides ticks, grid and lables
 hidespines!(ax)  # hide the frame
 display(fig2)
 
-save(pwd() * "/data/graphical_abstract.eps", fig2)
+save(pwd() * "/data/graphical_abstract.png", fig2)
