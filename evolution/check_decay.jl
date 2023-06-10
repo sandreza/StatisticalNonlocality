@@ -2,7 +2,7 @@ using GLMakie
 using FFTW
 
 starting = ones(1)
-decay = 1 ./ collect(1:1000)
+decay = 1 ./ collect(1:1000) 
 together_1a = [starting..., decay...]
 together_1 = [together_1a..., eps(1.0), reverse(together_1a)[2:end]...]
 together_2a = [starting..., (decay .^2)...]
