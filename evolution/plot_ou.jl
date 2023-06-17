@@ -10,7 +10,7 @@ close(hfile)
 ##
 fig = Figure(resolution=(2814, 1192))
 titlelables = ["Θ₁", "Θ₂", "Θ₃"]
-options = (; titlesize=30, xlabel="x", ylabel="y", xlabelsize=40, ylabelsize=40, xticklabelsize=30, yticklabelsize=30)
+options = (; titlesize=60, xlabel="x", ylabel="y", xlabelsize=60, ylabelsize=60, xticklabelsize=60, yticklabelsize=60)
 mth = 4.0 / 3
 colorrange = (-mth, mth)
 contourlevels = range(-mth, mth, 20)
@@ -24,7 +24,7 @@ for index_choice in 1:3
     heatmap!(ax2, x[:], y[:], field_tmp, colormap=:balance, interpolate=true, colorrange=colorrange)
     contour!(ax2, x[:], y[:], field_tmp, color=:black, levels=contourlevels, linewidth=1.0)
 end
-Colorbar(fig[1:2, 4]; limits=colorrange, colormap=:balance, flipaxis=false, ticklabelsize=30)
+Colorbar(fig[1:2, 4]; limits=colorrange, colormap=:balance, flipaxis=false, ticklabelsize=50)
 
 index_choice = 5
 colorrange = (-4.0, 4.0)
@@ -55,7 +55,7 @@ Colorbar(fig[1:2, 8]; limits=colorrange, colormap=colormap, flipaxis=false, tick
 
 display(fig)
 ##
-save(pwd() * "/data/fig4.eps", fig)
+save("data/fig4.eps", fig)
 
 ##
 fig2 = Figure(resolution= (1200,1000))
