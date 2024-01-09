@@ -2,8 +2,8 @@
 using JLD2
 
 # jlfile = jldopen("data/local.jld2", "a+")
-# jlfile = jldopen("data/nonlocal.jld2", "a+")
-jlfile = jldopen("data/nonlocal_symmetric.jld2", "a+")
+jlfile = jldopen("data/nonlocal.jld2", "a+")
+# jlfile = jldopen("data/nonlocal_symmetric.jld2", "a+")
 # jlfile = jldopen("data/nonlocal_more_velocity.jld2")
 EF¹¹ = jlfile["diffusivity"]["K11"]
 EF¹² = jlfile["diffusivity"]["K12"]
@@ -55,3 +55,21 @@ Colorbar(fig[1, 4], hm3, height = Relative(3 / 4), width = 25, ticklabelsize = 3
 Colorbar(fig[2, 4], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
     labelsize = 30, ticksize = 25, tickalign = 1,)
 display(fig)
+
+##
+using CairoMakie
+fig = Figure(resolution = (1800, 1300), title = "Nonlocal Operators")
+titlestring = "Kᶻᶻ"
+ax4 = Axis(fig[1,1], title = titlestring, titlesize = 30)
+sizeval = 30
+colormap = :thermal
+colormap2 = :balance
+options = (; xlabelsize = sizeval, ylabelsize = sizeval, xticklabelsize = sizeval, yticklabelsize = sizeval)
+
+hm4 = heatmap!(ax4, EF²²; colormap = colormap, options...)
+ax4.yreversed = true
+
+Colorbar(fig[1, 2], hm4, height = Relative(3 / 4), width = 25, ticklabelsize = 30,
+    labelsize = 30, ticksize = 25, tickalign = 1,)
+display(fig)
+save("data/fig2.eps", fig)

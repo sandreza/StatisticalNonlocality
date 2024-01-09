@@ -19,7 +19,7 @@ else
     κ = 1e-3 # 1e-3 # 1e-3
     wavenumber = 2 # 2 is default
     Δx = 2 / √N
-    us = 1 / sqrt(γ * 2 / ϵ^2) * [Δx * (i - N / 2) for i in 0:N]
+    us =  1 / sqrt(γ * 2 / ϵ^2) * [Δx * (i - N / 2) for i in 0:N]
     Q = ou_transition_matrix(N) .* γ
     Λ, V = eigen(Q)
     p = steady_state(Q) # from markov chain hammer
@@ -42,9 +42,9 @@ P⁻¹ = plan_ifft!(field_tuples.θs[1])
 λs = [10^i for i in -2:0.1:2]
 meanlist = Float64[]
 oldmeanlist = Float64[]
-δ = 0.1
+deviationlist = Float64[]
+δ = 0.7
 for λ in ProgressBar(λs)
-
     # Construction simulation parameters
     simulation_parameters = (; p, Q, ∂x, Δ, us, P, P⁻¹, κ, λ, field_tuples...)
     (; θ̇s, θs, c⁰) = field_tuples #extract
@@ -72,7 +72,8 @@ for λ in ProgressBar(λs)
     end
     φs = deepcopy(θs)
     ##
-    [θ .= c⁰ * p[i] for (i,θ) in enumerate(θs)]
+    # [θ .=  p[i] * c⁰ for (i,θ) in enumerate(θs)]
+    [θ .= p[i]^2 ./ φs[i] for (i,θ) in enumerate(θs)]
     ##
     cauchy_criteria = 1e-7
     dt = minimum([0.25/(M  * sqrt(N¹)), 1/(M^2 * κ)]) /2
@@ -98,10 +99,12 @@ for λ in ProgressBar(λs)
     ##
     mean(sum(θs))
     ##
-    (std.([φs[i] .* θs[i] / (p[i]^2) for i in eachindex(θs)]) ./ mean(sum(θs)) ) .* 100
+    push!(deviationlist, sum(abs.((std.([φs[i] .* θs[i] / (p[i]^2) for i in eachindex(θs)]) ./ mean(sum(θs)) ))) .* 100)
     ##
     simulation_parameters = (; simulation_parameters..., φs)
-    [θ .= c⁰ * p[i] for (i,θ) in enumerate(θs)]
+    # [θ .= c⁰ * p[i] for (i,θ) in enumerate(θs)]
+    [θ .= ths[i] for (i,θ) in enumerate(θs)]
+    # 
     ##
     cauchy_criteria = 1e-7
     dt = minimum([0.25/(M  * sqrt(N¹)), 1/(M^2 * κ)]) /2
@@ -145,5 +148,23 @@ ax = Axis(fig[1,1]; options..., xlabel = "log10(λ)", ylabel = "mean")
 lines!(ax, log10.(λs), meanlist, linewidth = 10, color = (:blue, 0.5), label = "new")
 lines!(ax, log10.(λs), oldmeanlist, linewidth = 10, color = (:red, 0.5), label = "old")
 ylims!(ax, (sqrt(1 - δ^2) .* 0.95, 1.05))
+ax2 = Axis(fig[1,2]; options..., xlabel = "log10(λ)", ylabel = "difference")
+lines!(ax2, log10.(λs), oldmeanlist - meanlist, linewidth = 10, color = (:purple, 0.5), label = "new")
+ylims!(ax2, (0.0001, 0.1))
+axislegend(ax, position = :rb, labelsize = fontsize)
+display(fig)
+
+##
+fig = Figure()
+fontsize = 40
+options = (; xlabelsize = fontsize, ylabelsize = fontsize, xticklabelsize = fontsize, yticklabelsize = fontsize)
+ax = Axis(fig[1,1]; options..., xlabel = "log10(λ)", ylabel = "mean")
+lines!(ax, log10.(λs), meanlist, linewidth = 10, color = (:blue, 0.5), label = "new")
+lines!(ax, log10.(λs), oldmeanlist, linewidth = 10, color = (:red, 0.5), label = "old")
+lines!(ax, log10.(λs), diffmeanlist, linewidth = 10, color = (:orange, 0.5), label = "kappa model")
+ylims!(ax, (sqrt(1 - δ^2) .* 0.95, 1.05))
+ax2 = Axis(fig[1,2]; options..., xlabel = "log10(λ)", ylabel = "difference")
+lines!(ax2, log10.(λs), oldmeanlist - meanlist, linewidth = 10, color = (:purple, 0.5), label = "new")
+ylims!(ax2, (0.0001, 0.1))
 axislegend(ax, position = :rb, labelsize = fontsize)
 display(fig)

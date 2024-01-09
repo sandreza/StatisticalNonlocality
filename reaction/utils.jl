@@ -5,13 +5,13 @@ import StatisticalNonlocality: ou_transition_matrix
 include("allocate_fields.jl")
 
 # Construct Markov Model
-N¹ = 3 # number of markov states
+N¹ = 1 # number of markov states
 γ = 1.0 # ou relaxation: default = 1.0
 ϵ = sqrt(2) # noise strength: default = √2
 N = N¹-1 # number of markov states - 1, numerically unstable for large N
 # construct markov approximation 
 if N == 0
-    κ = 1e-0 # 1e-3
+    κ = 2 * 1e-0 # 1e-3
     us = [0.0]
     p = [1.0]
     Q = [0.0]
@@ -38,6 +38,8 @@ P = plan_fft!(field_tuples.θs[1])
 P⁻¹ = plan_ifft!(field_tuples.θs[1])
 # Define Simulation Parameters
 λ = 0.01 # 0.01
+diffmeanlist = Float64[]
+for λ in ProgressBar(λs)
 δ = 0.7
 
 # Construction simulation parameters
@@ -64,6 +66,8 @@ for i in ProgressBar(1:1000000)
             break
         end
     end
+end
+push!(diffmeanlist, mean_theta[end])
 end
 ##
 fig = Figure()
